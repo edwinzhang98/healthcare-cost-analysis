@@ -19,8 +19,12 @@ from src.config import ROOT, load_config
 OUT = ROOT / "reports" / "report.html"
 
 
+_FIG_COUNT = [0]
+
+
 def _fig(fig) -> str:
-    return fig.to_html(full_html=False, include_plotlyjs=False,
+    _FIG_COUNT[0] += 1          # fixed div ids keep report.html identical across runs
+    return fig.to_html(full_html=False, include_plotlyjs=False, div_id=f"chart-{_FIG_COUNT[0]}",
                        config={"displaylogo": False, "responsive": True})
 
 
@@ -42,6 +46,7 @@ def _table(df: pd.DataFrame, fmt: dict | None = None, cls: str = "") -> str:
 
 
 def build() -> None:
+    _FIG_COUNT[0] = 0
     cfg = load_config()
     m = analysis.load_metrics()
     nat, cl, bc, dq_meta = m["national"], m["client"], m["business_case"], m["data"]
