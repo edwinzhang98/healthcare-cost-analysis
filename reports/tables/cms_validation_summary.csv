@@ -2,7 +2,7 @@ metric,ours,cms,note
 hospitals_in_both_files,2937.0,2945.0,CMS file excludes Maryland and closed hospitals
 hospitals_penalized,2336.0,2302.0,within hospitals in both files
 classification_agreement,0.9707184201566224,1.0,"TP 2276, TN 575, FP 60, FN 26"
-reduction_pct_correlation_pearson,0.915627358720052,1.0,
+reduction_pct_correlation_pearson,0.9156273587200517,1.0,
 reduction_pct_correlation_spearman,0.9415437893633958,1.0,
 mean_reduction_pct_among_penalized,0.004600906362066222,0.004396437880104252,each side's own penalized hospitals
 median_reduction_pct_among_penalized,0.003416612128235464,0.0030000000000000027,
