@@ -41,11 +41,17 @@ def findings(m: dict) -> list[str]:
     pv = v.get("persistence") or {}
     pers = pv.get("slope_fy2027_on_fy2026")
     pers_top = (pv.get("top_decile_mean_cut_fy2026"), pv.get("top_decile_mean_cut_fy2027"))
+    names = {h["facility_id"]: h["name"] for h in cl["hospitals"]}
+    lead27 = (names.get(max(v["client"], key=lambda c: c.get("cms_dollars_fy2027") or 0)["facility_id"], "")
+              if v.get("client") else "")
     return [
-        (f"**Where the penalty comes from.** We estimate the group loses about {money(cl['total_penalty'])} a year to the "
-         f"readmission penalty (FY2026 program). Two hospitals, {_short(top2[0])} and {_short(top2[1])}, carry "
-         f"{pct(cl['top2_share'])} of it. Heart failure ({money(cl['penalty_by_condition']['HF'])}) and hip/knee "
-         f"replacement ({money(cl['penalty_by_condition']['HIP_KNEE'])}) are the largest drivers."),
+        (f"**Where the penalty comes from.** We estimate the readmission penalty cost the group about "
+         f"{money(cl['total_penalty'])} in the FY2026 payment year. Two hospitals, {_short(top2[0])} and "
+         f"{_short(top2[1])}, carried {pct(cl['top2_share'])} of it. Heart failure "
+         f"({money(cl['penalty_by_condition']['HF'])}) and hip/knee replacement "
+         f"({money(cl['penalty_by_condition']['HIP_KNEE'])}) are the largest drivers."
+         + (f" CMS's FY2027 cuts, already set, come to about {money(v['client_cms_dollars_fy2027'])} on the same "
+            f"payment base, now led by {_short(lead27)}." if v.get("client_cms_dollars_fy2027") else "")),
         (f"**How we compare.** {ps['above_median']} of {ps['n']} hospitals readmit more patients than their typical peer "
          f"(same ownership and Medicare volume), and {ps['worst_fifth']} are in the bottom 20% of similar hospitals. The "
          f"gaps are specific: heart failure at {', '.join(ps['hf_worst'])} (worse than 90% or more of peers); pneumonia "
@@ -55,8 +61,9 @@ def findings(m: dict) -> list[str]:
          f"{money(broad['program_cost'])} a year and avoid about {money(broad['avoided_penalty'])} in penalties at full "
          f"strength (FY2032), about {cents(broad['benefit_cost_ratio'])} per $1; it cannot break even at any plausible "
          f"effect size. Even at the two best-placed hospitals it returns about {cents(pilot['benefit_cost_ratio'])} per $1 "
-         f"(hospital net {money(pilot['hospital_net'])} a year). The pilot breaks even only if it cuts readmissions by at "
-         f"least {pct(be['pilot_relative_reduction'])} (recent trials: about 11%), costs under "
+         f"(hospital net {money(pilot['hospital_net'])} a year). The pilot breaks even only if readmissions among enrolled "
+         f"patients fall about {pct(bc['pooled_break_even_reduction'])} (a {pct(be['pilot_relative_reduction'])} base effect, "
+         f"with heart failure at 1.2×; recent trials: about 11%), it costs under "
          f"{money(be['pilot_cost_per_enrollee'])} per patient, or payers return about "
          f"{pct(be['pilot_hospital_share_of_savings'])} of their savings. Across {mc['runs']:,} simulated scenarios it pays "
          f"for itself for the hospital {pct(mc['p_hospital_net_positive'])} of the time. Penalties are also a moving target"
@@ -70,6 +77,16 @@ def build(m: dict) -> list[dict]:
     sc = bc["scenarios"]
     broad, pilot, shared = sc["broad_all"], sc["targeted_pilot"], sc["targeted_pilot_risk30"]
     be, pw, ue = bc["break_even"], bc["pilot_power"], bc["pilot_unit_economics"]
+    ma = bc["params_targeted"]["ma_share"]
+    rb = (bc.get("robustness") or {}).get("peer_thresholds")
+    site_risk = ""
+    if rb and len(cl["pilot_hospitals"]) > 1:
+        second = cl["pilot_hospitals"][1]
+        site_risk = (f" The second site rests on our threshold proxy: on CMS's own peer-group thresholds the pilot "
+                     f"returns about {cents(rb['pilot']['benefit_cost_ratio'])} per $1 and "
+                     f"{_short(cl['pilot_hospital_names'][1])} ranks {rb['rank_peer_threshold'].index(second) + 1} of "
+                     f"{len(rb['rank_peer_threshold'])}, so confirm both sites with each hospital's CMS Hospital-Specific "
+                     f"Report before launch.")
     pilots = " and ".join(_short(n) for n in cl["pilot_hospital_names"])
     tgt = cl["benchmark_target"]
     hk = tgt.get("HIP_KNEE", {})
@@ -92,7 +109,7 @@ def build(m: dict) -> list[dict]:
         },
         {
             "what": (f"If leadership wants to reduce readmissions anyway, as a quality goal rather than a financial one, "
-                     f"run a 12-month pilot at {pilots}, where heart failure is worst and each program dollar returns the "
+                     f"run a two-year pilot (stop/continue checkpoint at month 12) at {pilots}, where heart failure is worst and each program dollar returns the "
                      f"most, for higher-risk heart failure and pneumonia patients: medication review before discharge, a "
                      f"nurse contact within 72 hours and a clinic visit within 7 days. Not phone calls alone: trials show "
                      f"no measurable effect from calls alone. Princeton's penalty is mostly hip/knee, which follow-up visits "
@@ -113,7 +130,8 @@ def build(m: dict) -> list[dict]:
                         f"prove such an effect statistically (that needs about {pw['n_per_group_for_break_even_effect']:,.0f} "
                         f"per group), so read the result alongside published trials."),
             "risk": ("Program effects usually shrink outside trials; CMS scores react only after two years and swing from "
-                     "year to year; a before-and-after comparison would credit the program with natural improvement."),
+                     "year to year; a before-and-after comparison would credit the program with natural improvement."
+                     + site_risk),
         },
         {
             "what": ("Ask the Medicare Advantage plans and ACO partners the group contracts with to co-fund the pilot "
@@ -124,7 +142,10 @@ def build(m: dict) -> list[dict]:
                        f"(at 30%: {money(shared['hospital_net'])} a year)."),
             "measure": "Term sheet signed before the pilot starts; savings reported quarterly.",
             "risk": ("Plans may decline or dispute which savings the program caused; ACO shared savings are settled on "
-                     "total cost of care at the ACO level, not per readmission, so the share must be written into the terms."),
+                     "total cost of care at the ACO level, not per readmission, so the share must be written into the terms. "
+                     f"About {pct(1 - ma)} of the payer savings accrue to traditional Medicare, which shares savings only "
+                     f"through its own programs (such as ACOs); from the Medicare Advantage plans alone the same dollars "
+                     f"would be about {pct(be['pilot_hospital_share_of_savings'] / ma)} of their savings."),
         },
         {
             "what": (f"Check hip/knee replacement at {_short(cl['target_hospital_name'])} before committing money: "

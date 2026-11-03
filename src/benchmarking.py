@@ -12,7 +12,7 @@ import pandas as pd
 DEFAULT_PEER_KEYS = ("ownership_group", "size_band")
 PEER_KEY_LABELS = {
     "ownership_group": "Same ownership",
-    "size_band": "Same size",
+    "size_band": "Same HRRP volume band",
     "census_region": "Same region",
     "has_emergency_services": "Same emergency-department status",
 }

@@ -136,7 +136,7 @@ The ERR above which a condition adds to the penalty, and how far above it the ER
 - **Formula, grain, unit.** Threshold, ours: median ERR among payment-eligible hospitals: HF 0.9989, PN 0.9957, COPD 0.9969, AMI 0.9994, CABG 1.0008, hip/knee 0.9910 (condition; ratio). CMS: the median of the hospital's peer group (dual-eligible quintile) [SUPP]. Excess ratio = max(ERR − threshold, 0), 0 if unscored (hospital × condition; ratio points).
 - **Code.** `fct_hospital_condition.penalty_threshold_err` (CTE `threshold`), `excess_ratio_over_threshold`, `is_above_threshold`; `penalty.penalty_thresholds()`.
 - **CMS.** (ERR − peer-group median), counted with ≥25 discharges [CFR152]; peer groups required from FY2019 [SSA]; HF medians 0.9922–1.0164 across groups (`cms_validation_thresholds.csv`).
-- **Pitfalls.** The national median under-flags low-dual and over-flags high-dual hospitals (03 §10.5); in the client group this matters most at University Hospital (Newark): 0.34% estimated vs CMS's 0.05%, about $11K. A 1.00 threshold gives $285.3M and 2,308 penalized. Medians move every year. Unscored conditions are 0, not "at threshold".
+- **Pitfalls.** The national median under-flags low-dual and over-flags high-dual hospitals (03 §10.5); for the group's penalty this matters most at University Hospital (Newark): 0.34% estimated vs CMS's 0.05%, about $11K; for the pilot, at Palisades (§9.8). A 1.00 threshold gives $285.3M and 2,308 penalized. Medians move every year. Unscored conditions are 0, not "at threshold".
 
 ### 5.2 Neutrality modifier (NM)
 
@@ -160,14 +160,14 @@ PAF multiplies the hospital's FFS base operating DRG payments for the year; redu
 - **Formula, grain, unit.** Formula block; ours = `penalty_est_annual ÷ est_total_base_payments_annual`; hospital × year; percent (0–3%).
 - **Code.** `mart_penalty_hospital.payment_reduction_pct`, `hits_cap`; `penalty.estimate()`.
 - **CMS.** [CFR154]; FY2026 factors [T15-26].
-- **Pitfalls.** Applies to all FFS base payments, not only the six conditions; excludes IME, DSH, outlier, low-volume and capital payments and all MA payments [CFR152, FACT27].
+- **Pitfalls.** Applies to all FFS base payments, not only the six conditions; excludes IME, DSH, outlier, low-volume and capital payments and all MA payments [CFR152, FACT27]. r = 0.92 on the size of the cut is partly in-sample: the six payment weights, 0.9627 and 0.133 come from the same CMS release (03 §10.1); the 97.1% agreement does not depend on them.
 
 ### 5.5 Estimated penalty $
 
 Dollars lost to HRRP in a year under FY2026 rules (CMS publishes factors, not dollars).
 - **Formula, grain, unit.** Formula block; payment-eligible hospitals, scored conditions; contributions scale pro rata at the cap; hospital × condition and hospital; dollars per year. Payment per case (assumptions B3): HF $8,523, PN $9,928, COPD $7,583, AMI $13,139, CABG $30,892, hip/knee $12,062.
 - **Code.** `mart_penalty_condition.penalty_contribution_annual`; `mart_penalty_hospital.penalty_est_annual`; `penalty.estimate()`.
-- **CMS.** Aggregate payments for excess readmissions [CFR152]; FY2026 cuts were 0.44% of base payments, no dollar total [IPPS26].
+- **CMS.** Aggregate payments for excess readmissions [CFR152]; FY2026 cuts were 0.44% of base payments, no dollar total [IPPS26]. CMS's cuts on our payment base (`validation.client_cms_dollars_fy2026`, `_fy2027`; `.client[].cms_dollars_*`) = CMS's reduction % × our penalty ÷ our cut: $1.04M FY2026, $0.40M FY2027.
 - **Pitfalls.** Not official: $296.1M vs CMS's nearest totals, $316.1M (FY2025 method) and about $361M (FY2027) [IPPS26, IPPS27]. National, not wage-adjusted, payments: ±30% gives $207M–$385M, so single hospitals are ±30%. Hidden counts at 25 or at the bound: $275.3M–$316.6M.
 
 ### 5.6 Penalized hospital and share penalized
@@ -252,12 +252,12 @@ Comparison hospitals for a target.
 - **Formula, grain, unit.** Payment-eligible hospitals with an ERR, same ownership group and volume band, target excluded, counted per condition; set. Princeton (Plainsboro): 707 overall, 704 HF, 577 hip/knee.
 - **Code.** `benchmarking.peer_ids()`.
 - **CMS.** None; not CMS's dual-eligible peer groups [SUPP].
-- **Pitfalls.** Say "peers (same ownership and volume)", never just "peer group". Fewer than 10 is flagged.
+- **Pitfalls.** Say "peers (same ownership and volume)", never just "peer group". Fewer than 10 scored peers flags a condition (`small_peer_group`, dashboard page 4); fewer than 30 peers overall, a warning.
 
 ### 7.2 Percentile, gap and readmissions vs peers
 
 Where the target sits among peers (higher = worse), and how far it is from the typical peer.
-- **Formula, grain, unit.** Percentile = 100 × share of peers with a lower ERR (or index); ≥ 75 "worse than most", ≤ 25 "better than most". Gap = ERR − peer median (ratio points); × annual discharges × expected ÷ 100 = readmissions per year. Target × condition.
+- **Formula, grain, unit.** Percentile = 100 × share of peers with a lower ERR (or index); ≥ 75 "worse than most", ≤ 25 "better than most"; unscored "No CMS score" / "–" (footnotes 1, 5, 7). Gap = ERR − peer median (ratio points); × annual discharges × expected ÷ 100 = readmissions per year. Target × condition.
 - **Code.** `benchmarking.benchmark()` → `percentile_vs_peers`, `gap_vs_peer_median`, `readmissions_vs_peer_median`; `benchmarking.peer_summary()`; `analysis.client_peer_grid()` → `client.peer_percentiles`.
 - **CMS.** None.
 - **Pitfalls.** Headline counts: index percentile > 50 = "readmits more than the typical peer", ≥ 80 = "bottom 20%"; HF ≥ 90, PN and COPD ≥ 75 (`recommendations.peer_summary()`). A high percentile can mean few patients: Princeton's hip/knee ERR of 1.38 (98.8th percentile) rests on 16 readmissions on 164 discharges over 3 years against 8.8 expected, about 2 extra a year (1.1 above the peer median in score terms)[^hk]. Its $249,157 is the FY2026 estimate; forward exposure is likely lower (FY2027 cut 0.04%; §8.2).
@@ -279,7 +279,7 @@ Share of today's ERR excess expected to remain in FY2029+ windows without a prog
 - **Formula, grain, unit.** Baseline ERR = 1 + persistence × (ERR − 1); same for the observed rate; base 0.5 (0.3–0.8; 1.0 = `targeted_pilot_no_rtm`); hospital × condition; share.
 - **Code.** `cost_model.evaluate()` → `baseline_err`, `penalty_before`; anchor `validate_cms.run()` → `cms_validation_persistence.csv`.
 - **CMS.** No metric. Anchor (2,894 hospitals in both Table 15 files [T15-26, T15-27]): FY2027 cut ≈ 0.58 × FY2026 cut + 0.16 points (slope 0.578, intercept +0.0016, correlation 0.573). Penalties drift back toward the average: the top tenth's mean cut fell from 1.38% to 0.96% (about −30%; 40% of them lost more than half) and small cuts grew, while the mean barely moved (0.346% → 0.356%; FY2026-penalized 0.439% → 0.423%)[^pers]. Regression to the mean explained 74–87% of improvement at hospitals penalized in FY2013 [JOSHI].
-- **Pitfalls.** The slope is not a ratio of levels: with the intercept, the mean cut did not fall. It also reflects the FY2027 rule change (MA, 2-year window) and 12 shared months; FY2029+ windows share none. Persistence lowers the baseline (pilot $249K vs $485K today); comparing with today's penalty credits the program with natural improvement.
+- **Pitfalls.** The slope is not a ratio of levels: with the intercept, the mean cut did not fall. It also reflects the FY2027 rule change (MA, 2-year window) and 12 shared months; FY2029+ windows share none. Persistence lowers the baseline (`penalty_before`: group $644K, pilot $249K; FY2026 $1.23M, $485K); comparing with FY2026 credits the program with natural improvement. CMS's FY2027 cuts on our base ($0.40M; Inspira $94K vs $191K baseline, Palisades $161K vs $59K) come under other rules and thresholds: a warning, not a replacement baseline.
 
 ## 9. Program (business-case) metrics
 
@@ -298,7 +298,7 @@ avoided penalty      = penalty(baseline ERR) − penalty(new ERR)          FFS p
 ### 9.1 Enrollees, program cost, readmissions avoided
 
 Who is enrolled, at what cost, and what it prevents.
-- **Formula, grain, unit.** Enrollees = cohort × reach over targeted rows (discharges per year: broad 2,309, pilot 201). Program cost = enrollees × $400 + $25,000 × hospitals (dollars per year: broad $1.12M, pilot $130K). Readmissions avoided per year among all Medicare patients, formula block, effect capped at 90% (broad 42.4, pilot 7.3).
+- **Formula, grain, unit.** Enrollees = cohort × reach over targeted rows (discharges per year: broad 2,309, pilot 201). Program cost = enrollees × $400 + $25,000 × hospitals (dollars per year: broad $1.12M, pilot $130K). Two-year pilot budget (`bc.pilot_unit_economics`): `budget_first_12_months` = fixed + half the variable cost, $90K; `budget_full_strength_annual` = program cost. Readmissions avoided per year among all Medicare patients, formula block, effect capped at 90% (broad 42.4, pilot 7.3).
 - **Code.** `evaluate()` → `enrollees`, `program_cost`, `readmissions_avoided`; `phase_in()` by year. **CMS.** None.
 - **Pitfalls.** Enrollees are discharges, not people, and include MA patients. Readmissions avoided count in full (shrinkage affects only the ERR); trial effects usually shrink in practice, and a before-and-after count overstates them (§8.2).
 
@@ -307,7 +307,7 @@ Who is enrolled, at what cost, and what it prevents.
 The cut in the annual penalty attributable to the program.
 - **Formula, grain, unit.** Penalty at baseline ERR − penalty at new ERR, FFS payments, 3% cap; hospital; dollars per year. Full strength (FY2032): broad $292K, pilot $110K; FY2031: $267K, $96K[^phase]. Phase-in scales the ERR effect by the effect share (§2).
 - **Code.** `evaluate()` → `penalty_today`, `penalty_before`, `avoided_penalty`; `phase_in()`. **CMS.** Timing per [CFR152].
-- **Pitfalls.** Name the year. Measured against the baseline forecast, not today's penalty. Zero below the threshold.
+- **Pitfalls.** Name the year. Measured against the baseline forecast, not the FY2026 penalty. Zero below the threshold.
 
 ### 9.3 Payer saving (P), variable cost (V) and lost margin per readmission
 
@@ -341,17 +341,18 @@ Hospital return per program dollar, and program dollars per readmission prevente
 ### 9.7 Break-even value
 
 The input value giving zero net, others at base.
-- **Formula, grain, unit.** Bisection on `evaluate()` (reduction 0–60%, cost $0–$3,000, share 0–100%); unit of the input. Pilot: base effect 14.0% (whole-system 11.8%), $236 per patient, 26.7% of payer savings. Broad: none up to 60%; $7.77.
+- **Formula, grain, unit.** Bisection on `evaluate()` (reduction 0–60%, cost $0–$3,000, share 0–100%); unit of the input. Pilot: base effect 14.0% (whole-system 11.8%), $236 per patient, 26.7% of all payer savings ($33K of $123K; 59% is traditional Medicare's, shared only via its own programs such as ACOs; from MA plans alone, about 65%). Broad: none up to 60%; $7.77.
 - **Code.** `cost_model.break_even()` → `business_case.break_even`; `cost_model.grid()` → `bc_grid.parquet`. **CMS.** None.
-- **Pitfalls.** One input at a time. The input is the base (pneumonia) effect; with HF at 1.2×, the pooled effect across enrollees is 1.16 × base[^pool]: 14% base ≈ 16% pooled, 10% base ≈ 12% pooled (where 27% co-funding or $236 per patient breaks even). Month-24 rule (pooled): keep only if ≥16% at ≤$400 per patient, ≥12% with ≥27% payer co-funding, or ≥12% at ≤$236.
+- **Pitfalls.** One input at a time. The input is the base (pneumonia) effect; with HF at 1.2×, the pooled effect across enrollees is 1.16 × base[^pool]: 14% base ≈ 16% pooled (`bc.pooled_break_even_reduction`), 10% base ≈ 12% pooled (where 27% co-funding or $236 per patient breaks even). Month-24 rule (pooled): keep only if ≥16% at ≤$400 per patient, ≥12% with ≥27% payer co-funding, or ≥12% at ≤$236.
 
 ### 9.8 Sensitivity: ±30%, tornado, Monte Carlo
 
 How far the result moves when inputs change.
 - **Formula, grain, unit.** ±30%: each `TORNADO_PARAMS` input with a nonzero base at −30% and +30% (reach, MA share capped at 0.95); sign flips of hospital and whole-system net. Monte Carlo: 2,000 draws (seed 42) of eight independent triangular inputs (ranges above); probability net > 0.
-- **Values.** Pilot: only payment +30% flips hospital net, to +$66[^flip]; broad: none. P(hospital net > 0) 11.9%, whole-system 22.7%; hospital net 5th / 50th / 95th percentile −$127K / −$54K / +$19K.
+- **Values.** Pilot: only payment +30% flips hospital net, to +$66 a year[^flip]; broad: none. P(hospital net > 0) 11.9%, whole-system 22.7%; hospital net 5th / 50th / 95th percentile −$127K / −$54K / +$19K.
+- **Robustness** (`analysis.robustness()` → `bc.robustness`). `peer_thresholds`: pilot patients on each hospital's CMS FY2026 peer-group medians (Palisades, group 5: HF 1.0164, PN 1.0101): expected penalty $240K, avoided $98.7K, net −$44.4K, $0.66 per $1; Palisades' pneumonia ends below its threshold (avoided $23.2K vs $34.6K, net −$41.6K), Inspira's avoided $75.5K holds. `.each_hospital_alone`, `.rank_peer_threshold`: alone, Inspira first ($0.64), Palisades 5th of 8 ($0.30). `ffs_only_pilot`: 30% of FFS patients only (reach 0.177): net −$39.9K (cost $97.4K, avoided $65.0K); enrolling by risk, not payer, is a design choice.
 - **Code.** `analysis.sensitivity_table()` → `bc_sensitivity*.parquet`; `cost_model.tornado()`; `cost_model.monte_carlo()` → `business_case.monte_carlo` (rerun identical, P5). **CMS.** None.
-- **Pitfalls.** The tornado and the ±30% table both cap variable cost share at 1.0 (+30% of 0.80 would be 1.04). Monte Carlo ranges lean adverse (median below base); correlated inputs would widen the spread.
+- **Pitfalls.** The tornado and the ±30% table both cap variable cost share at 1.0 (+30% of 0.80 would be 1.04). Monte Carlo ranges lean adverse (median below base); correlated inputs would widen the spread. Base case: national-median proxy; confirm both sites with each hospital's CMS Hospital-Specific Report before launch.
 
 ### 9.9 Pilot power
 
@@ -366,30 +367,28 @@ README and memo numbers (abridged) and their `reports/key_metrics.json` keys; §
 
 | Headline | Key | § |
 |---|---|---|
-| 3,055 hospitals, 18,330 rows; 30 checks pass, 7 warnings, 0 fail | `data.hrrp_hospitals`, `.hrrp_rows`, `.dq_checks` | 1 |
+| 3,055 hospitals, 18,330 rows (discharges Jul 2021 – Jun 2024); 30 checks pass, 7 warnings, 0 fail | `data.hrrp_hospitals`, `.hrrp_rows`, `.dq_checks` | 1, 2 |
 | 2,336 hospitals penalized (CMS: 2,304); 84% of scored | `national.hospitals_penalized`, `.share_penalized_of_scored`; `known_numbers.fy2026_hospitals_penalized` | 5.6 |
 | $296M a year, below CMS's $316M–$361M; single hospitals ±30% | `national.total_penalty`, `.penalty_sensitivity`; `known_numbers.fy2026_total_penalty_reference_low`, `_high` | 5.5 |
 | Top 10% carry 55%; HF + PN 74% of excess readmissions; surgery 29% of dollars from 13% of discharges | `national.top10_share_of_penalty`, `.hf_pn_share_excess_readmissions`, `.surgical_share_penalty`, `.surgical_share_discharges` | 5.8 |
 | About $217K per extra hip/knee readmission vs $42K for HF | `national.conditions.HIP_KNEE.penalty_per_excess_readmission` (and `HF`) | 5.7 |
-| The group loses about $1.2M a year; two hospitals carry 62%; HF ($511K) and hip/knee ($327K) are the largest drivers | `client.total_penalty`, `.top2_share`, `.penalty_by_condition` | 5.5 |
+| The group lost an estimated $1.2M in the FY2026 payment year; two hospitals carried 62%; HF ($511K) and hip/knee ($327K) the largest drivers | `client.total_penalty`, `.top2_share`, `.hospitals`, `.penalty_by_condition` | 5.5 |
+| CMS's cuts on our payment base: FY2026 $1.04M (ours $1.23M); FY2027 about $0.4M, led by Palisades ($161K), below the FY2029+ baseline ($0.64M); they fell at five hospitals, held at one, rose at Palisades and Jersey City | `validation.client_cms_dollars_fy2026`, `_fy2027`, `.client[]` (`cms_reduction_*`, `cms_dollars_*`); `sc.broad_all.penalty_before` | 5.5, 8.2 |
 | 7 of 8 readmit more than their typical peer, 5 in the bottom 20%; HF at three hospitals worse than at 90%+ of peers | `client.peer_percentiles`[^peer] | 7.2 |
-| One hospital's hip/knee ratio (1.38) worse than at 99% of peers | `client.benchmark_target.HIP_KNEE` | 7.2 |
-| Hip/knee drove about $250K of the FY2026 estimate, forward exposure likely lower; FY2027 cut fell to 0.04% | `client.target_penalty_by_condition.HIP_KNEE` ($249,157); `validation.client` (310010) | 7.2 |
-| This year's penalties fell at five hospitals, rose at Palisades and Jersey City | `validation.client` (`cms_reduction_fy2026`, `_fy2027`: 5 fell, 2 rose, 1 unchanged) | 8.2 |
+| One hospital's hip/knee ratio (1.38) worse than at 99% of peers; it drove about $250K of the FY2026 estimate, forward exposure likely lower (FY2027 cut 0.04%) | `client.benchmark_target.HIP_KNEE`, `.target_penalty_by_condition.HIP_KNEE` ($249,157); `validation.client` (310010) | 7.2 |
 | Biggest FY2026 cuts shrank about 30% in FY2027 (1.38% → 0.96%); small ones grew | `validation.persistence.top_decile_mean_cut_fy2026`, `_fy2027`, `.slope_fy2027_on_fy2026`; intercept[^pers] | 8.2 |
 | Group-wide: about $1.1M a year for about $0.29M ($0.3M) at full strength (FY2032), $0.19 per $1; no break-even; under $8 per patient | `sc.broad_all.program_cost`, `.avoided_penalty`, `.benefit_cost_ratio`; `bc.break_even.broad_relative_reduction` (null), `.broad_cost_per_enrollee` | 9.1–9.7 |
-| Pilot at Inspira Mullica Hill and Palisades: about $90K in the first 12 months, $130K a year at full size, 7 fewer readmissions, $110K less penalty at full strength | `client.pilot_hospital_names`; `bc.pilot_unit_economics.budget_first_12_months`, `.budget_full_strength_annual`; `sc.targeted_pilot.readmissions_avoided`, `.avoided_penalty` | 9.1, 9.2 |
-| $0.75 per $1; hospital net −$33K a year | `sc.targeted_pilot.benefit_cost_ratio`, `.hospital_net` | 9.4, 9.6 |
-| Relief starts late 2028; full effect late 2031; no payback by FY2032 | `bc_phase_in.parquet`[^phase]; `sc.targeted_pilot.cum_hospital_net_6y` (−$500,848) | 2, 9.4 |
-| Breaks even at ≥14% base effect (about 16% pooled; recent trials about 11%), ≤ $236 per patient, or about 27% of payer savings | `bc.break_even.pilot_relative_reduction`, `.pilot_cost_per_enrollee`, `.pilot_hospital_share_of_savings`; `bc.params_targeted.relative_reduction`; pooled factor[^pool] | 9.7 |
-| Month 12: ≥80% get all three steps at ≤$400. Month 24: keep if pooled readmissions fall about 16% (12% with co-funding or ≤$236) | `bc.params_targeted.cost_per_enrollee`; break-even keys above[^pool] | 9.7, 9.9 |
-| About 300 patients cannot prove it (needs about 1,250 per group) | `bc.pilot_power.enrolled_first_24_months`, `.n_per_group_for_break_even_effect` | 9.9 |
+| Two-year pilot (month-12 checkpoint) at Inspira Mullica Hill and Palisades: about $90K in the first 12 months, $130K a year at full size, 7 fewer readmissions, $110K less penalty at full strength; contact ≤72 h, visit ≤7 days | `client.pilot_hospital_names`; `bc.pilot_unit_economics.budget_first_12_months`, `.budget_full_strength_annual`; `sc.targeted_pilot.readmissions_avoided`, `.avoided_penalty`; design: business case §2 | 9.1, 9.2 |
+| Best-placed pilot (base case): $0.75 per $1, hospital net −$33K a year; on CMS's peer-group thresholds $0.66, Palisades 5th of 8 | `sc.targeted_pilot.benefit_cost_ratio`, `.hospital_net`; `bc.robustness.peer_thresholds.pilot.benefit_cost_ratio`, `.rank_peer_threshold` | 9.4, 9.6, 9.8 |
+| Relief starts late 2028 (2-year look-back); full effect late 2031; no payback by FY2032; FY2027 data early 2027; sepsis from FY2030 | `bc_phase_in.parquet`[^phase]; `sc.targeted_pilot.cum_hospital_net_6y` (−$500,848); [FACT27, IPPS27] | 2, 9.4 |
+| Break-even: about 16% fewer readmissions among enrolled patients (14% base effect, HF at 1.2×; base case 10%, trials about 11%), ≤ $236 per patient, or about 27% of all payer savings ($33K of $123K; 59% traditional Medicare's; from MA plans alone about 65%) | `bc.pooled_break_even_reduction`; `bc.break_even.pilot_relative_reduction`, `.pilot_cost_per_enrollee`, `.pilot_hospital_share_of_savings` (× `sc.targeted_pilot.payer_savings`; ÷ `bc.params_targeted.ma_share`, 0.41); `bc.params_targeted.relative_reduction`; trials: assumptions C4 | 9.7 |
+| Month 12: ≥90 enrolled (about 100 expected), ≥80% get all three steps at ≤$400. Month 24: keep if pooled readmissions fall about 16% (12% with co-funding or ≤$236); about 300 patients cannot prove it (needs about 1,250 per group) | `bc.pilot_power.enrolled_first_12_months`, `_24_months`, `.n_per_group_for_break_even_effect`; `bc.params_targeted.cost_per_enrollee`; break-even keys above[^pool] | 9.7, 9.9 |
 | 2,000 scenarios: pays for itself 12% of the time (median −$54K) | `bc.monte_carlo.p_hospital_net_positive`, `.hospital_net_p50` | 9.8 |
-| One readmission costs about $18,000 to prevent and earns about $15,000 of relief; the $17,000 saved goes to the insurer | `bc.pilot_unit_economics` | 9.3, 9.6 |
-| Same call as CMS for 97.1%; r = 0.92 (rank 0.94); mean cut 0.46% vs 0.44% | `validation.agreement`, `.r_pearson`, `.r_spearman`, `.mean_reduction_ours`, `.mean_reduction_cms` | 5.4, 5.6 |
-| University Hospital (Newark): 0.34% vs CMS's 0.05%, about $11K | `validation.client` (310119) | 5.1 |
+| Of the ±30% changes only payment per discharge +30% flips the pilot (+$66 a year) | `bc.sensitivity_pilot.hospital_flips`; `bc_sensitivity.parquet`[^flip] | 9.8 |
+| One readmission costs about $18,000 to prevent and earns about $15,000 of relief (group-wide $27,000 vs $7,000); the $17,000 saved goes to the insurer | `bc.pilot_unit_economics`; `sc.broad_all.cost_per_readmission_avoided`, `.avoided_penalty` ÷ `.readmissions_avoided` | 9.3, 9.6 |
+| Same call as CMS for 97.1%; r = 0.92 (rank 0.94), partly in-sample; mean cut among penalized 0.46% vs 0.44%; University Hospital (Newark) 0.34% vs CMS's 0.05%, about $11K | `validation.agreement`, `.r_pearson`, `.r_spearman`, `.mean_reduction_ours`, `.mean_reduction_cms`; `.client` (310119) | 5.1, 5.4, 5.6 |
 | About 20% of an HF improvement reaches the score at 100 discharges, 80% at 1,500 (R² ≥ 0.99) | `shrinkage.HF.pass_through_at_100`, `_at_1500`; `shrinkage.*.r_squared` | 8.1 |
-| 0.9627 × payments × excess ratio, capped at 3% | `bc.params_targeted.neutrality_modifier`, `.penalty_cap_pct` | 5.2 |
+| 0.9627 × payments × excess ratio, capped at 3%; SQL = Python (P1) | `bc.params_targeted.neutrality_modifier`, `.penalty_cap_pct` | 5, 5.2 |
 
 ## 11. Sources
 

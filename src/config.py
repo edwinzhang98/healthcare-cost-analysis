@@ -25,8 +25,8 @@ def load_config() -> dict:
         cfg = yaml.safe_load(fh)
 
     data = cfg["data"]
-    raw_dir = os.environ.get("CMS_RAW_DIR") or data["raw_dir"]
-    data["raw_dir"] = str(Path(raw_dir).expanduser())
+    raw_dir = Path(os.environ.get("CMS_RAW_DIR") or data["raw_dir"]).expanduser()
+    data["raw_dir"] = str(raw_dir if raw_dir.is_absolute() else (ROOT / raw_dir).resolve())   # relative = from repo root
     for key in ("processed_dir", "warehouse"):
         data[key] = str((ROOT / data[key]).resolve())
     data["seed_dir"] = str((ROOT / data["seed_dir"]).resolve())

@@ -15,9 +15,9 @@
 
 - **A group-wide program does not pay for itself through penalties.** The broad design (heart failure, pneumonia, COPD and heart attack; half of all Medicare patients; all 8 hospitals) would cost about $1.12M a year to avoid about $292K of penalty at full strength: $0.19 back per $1, a hospital net of −$906K a year. It costs more than the group's entire expected penalty ($644K a year), so no effect size makes it break even; nationally it would pay back at none of the 2,688 hospitals where it could run.
 - **The best-placed pilot returns about $0.75 per $1.** A targeted program for higher-risk heart failure and pneumonia patients at Inspira Medical Center Mullica Hill and Palisades Medical Center would cost about $130K a year, prevent about 7 readmissions and avoid about $110K of penalty a year at full strength (hospital net −$33K a year). CMS's window closes 15 months before each payment year, so relief starts in FY2029 and reaches full strength in FY2032; the pilot does not pay back within FY2027–FY2032 (cumulative hospital net −$501K).
-- **Break-even needs more than the evidence supports.** For the hospital the pilot breaks even only if it cuts readmissions among enrolled patients by ≥ 14% in the model's base effect (≈ 16% pooled; base case 10%, close to recent trials), costs ≤ $236 per patient (base $400), or payers return ≥ 27% of their savings. Only 1 of 18 one-at-a-time ±30% changes reaches break-even (payment per discharge +30%), and 12% of 2,000 Monte Carlo runs end positive.
+- **Break-even needs more than the evidence supports.** For the hospital the pilot breaks even only if it cuts readmissions among enrolled patients by about 16% (a 14.0% base effect with heart failure at 1.2 times; base case 10%, recent trials about 11%), costs ≤ $236 per patient (base $400), or payers return ≥ 27% of all their savings. Only 1 of 18 one-at-a-time ±30% changes reaches break-even (payment per discharge +30%), and 12% of 2,000 Monte Carlo runs end positive.
 - **For payers and hospital together the pilot is close but negative:** −$20K a year (broad: −$479K), positive in 23% of Monte Carlo runs. Penalties and FFS payments are transfers between them; what remains is $15,200 of hospital cost saved per avoided readmission against $17,900 of program cost. Payers save about $16,900 per avoided readmission, the basis for asking them to co-fund.
-- **Recommendation: no group-wide program; a measured pilot only on quality grounds,** with a concurrent comparison group and a co-funding request to the Medicare Advantage plans and ACO partners the group contracts with. **Month 12 (stop or continue):** ≥ 80% of enrolled patients receive all three components, ≥ 90 enrolled, variable cost ≤ $400 per patient, and no rise in ED visits, observation stays, mortality or readmissions vs the comparison group. **Month 24 (keep or stop):** make it permanent only if the pooled reduction is ≥ 16% at ≤ $400 per patient, or ≥ 12% with ≥ 27% payer co-funding or at ≤ $236 per patient. The pilot is too small to prove such an effect statistically (Section 9.3).
+- **Recommendation: no group-wide program; a measured two-year pilot only on quality grounds,** with a concurrent comparison group and a co-funding request to the Medicare Advantage plans and ACO partners the group contracts with. **Month 12 (stop or continue):** ≥ 80% of enrolled patients receive all three components, ≥ 90 enrolled, variable cost ≤ $400 per patient, and no rise in ED visits, observation stays, mortality or readmissions vs the comparison group. **Month 24 (keep or stop):** make it permanent only if the pooled reduction is ≥ 16% at ≤ $400 per patient, or ≥ 12% with ≥ 27% payer co-funding or at ≤ $236 per patient. The pilot is too small to prove such an effect statistically (Section 9.3).
 
 ## 2. The program
 
@@ -28,7 +28,7 @@ A three-part transitional care bundle for higher-risk heart failure and pneumoni
 **Who is enrolled (pilot).** Medicare patients 65+, FFS and MA, discharged alive with heart failure or pneumonia where the hospital's ERR is above the threshold (heart failure at Inspira Mullica Hill, whose pneumonia ERR of 0.995 is just below the 0.996 threshold; both conditions at Palisades), and only the highest-risk 30% by a risk score at discharge, assumed to carry 1.5 times the average risk (range 1.2–1.8; C3, Donzé 2016). That is about 200 patients a year (114 at Inspira Mullica Hill; 37 heart failure and 50 pneumonia at Palisades), of whom about 31% (63 a year) would be readmitted within 30 days without the program; the base case prevents about 7.[^power]
 
 **Why heart failure and pneumonia.**
-- **Size:** 74% of national excess readmissions and 54% of estimated penalty dollars. In the group, heart failure is the largest condition ($511K a year) and the two are $687K of $1.23M (56%).[^calc] Larger volumes also let more of an improvement reach the score (Section 3.5).
+- **Size:** 74% of national excess readmissions and 54% of estimated penalty dollars. In the group's FY2026 estimate, heart failure is the largest condition ($511K) and the two are $687K of $1.23M (56%).[^calc] Larger volumes also let more of an improvement reach the score (Section 3.5).
 - **Weight:** the largest DRG payment ratios of the six conditions (medians 4.6% for pneumonia and 3.6% for heart failure of base operating DRG payments; CMS FY2026 supplemental file).
 - **Evidence:** heart failure has the strongest trials, so it gets 1.2 times the base effect (12%); pneumonia rests on discharge-planning trials in older medical patients (Cochrane 2022: RR 0.89 within about 3 months) and observational studies, so it gets the base 10%.
 - **Left out:** COPD shows no significant effect on 30-day all-cause readmission (Zhong 2022: RR 0.95, 95% CI 0.76–1.19). Bypass and hip/knee surgery have sparse, inconclusive evidence (Tobiano 2025). For heart attack only 13–45% of an improvement would reach the score at the group's hospitals, and the evidence is mostly observational.
@@ -64,7 +64,7 @@ Sources: Table 2 (C8–C10). MA plans are assumed to pay close to traditional Me
 
 ### 3.3 FY2027+ rules: MA patients count in the score, not in the penalty base
 
-From FY2027 CMS scores a 2-year window, counts MA patients in the ERR, and still charges the penalty only on FFS base operating DRG payments (FY2026 IPPS final rule; CMS FY2027 HRRP fact sheet). With 41% of New Jersey's Medicare patients in MA (RUPRI Center 2026), each prevented readmission moves the penalty about 59% as much as under the FY2026 rules. To move the score, **enrollment must include MA patients**, so cost scales with all Medicare patients (about 1.7 times the FFS volume) while the penalty base does not. Under the FY2026 rules the pilot would roughly break even (−$0.3K a year, $1.00 per $1); the broad program would still lose $509K a year (Table 3).[^fy26]
+From FY2027 CMS scores a 2-year window, counts MA patients in the ERR, and still charges the penalty only on FFS base operating DRG payments (FY2026 IPPS final rule; CMS FY2027 HRRP fact sheet). With 41% of New Jersey's Medicare patients in MA (RUPRI Center 2026), each enrolled patient, whatever the payer, moves the score about 59% as much as an FFS patient did under the FY2026 rules. The program enrolls by risk, not payer (a design choice, not a necessity), so cost scales with all Medicare patients (about 1.7 times the FFS volume) while the penalty base does not; enrolling 30% of FFS patients only would cut variable cost and relief by 41% but not the $50K fixed cost (hospital net −$40K a year, not −$33K).[^calc] Under the FY2026 rules the pilot would roughly break even (−$0.3K a year, $1.00 per $1); the broad program would still lose $509K a year (Table 3).[^fy26]
 
 ### 3.4 Regression to the mean: the baseline is a forecast
 
@@ -159,9 +159,9 @@ Table 6. How the program moves each score (steady state; pass-through on the FY2
 | Palisades | Heart failure | 1.113 | 96.1 | 1.057 | 1.032 | 0.999 | 0.400 | 37 | 1.5 |
 | Palisades | Pneumonia | 1.038 | 77.1 | 1.019 | 0.998 | 0.996 | 0.447 | 50 | 1.3 |
 
-All three stay above the threshold after the program, so every point of ERR reduction counts. Palisades pneumonia ends just above it; improvement below the threshold saves no penalty.
+On national medians all three stay above the threshold after the program, so every point of ERR reduction counts; Palisades pneumonia ends just above it, and improvement below the threshold saves no penalty. On CMS's FY2026 peer-group medians (Palisades' group, the most dual-eligible: heart failure 1.016, pneumonia 1.010) Palisades pneumonia would end below the threshold: Palisades' expected penalty would be $34K, its net −$42K and the pilot's −$44K a year ($0.66 per $1).[^calc]
 
-**Why these two hospitals.** They return the most per $1, which ranks hospitals on the penalty this program can address rather than on total penalty (ranking on last year's total tends to pick hospitals at their peak).
+**Why these two hospitals.** They return the most per $1, which ranks hospitals on the penalty this program can address rather than on total penalty (ranking on last year's total tends to pick hospitals at their peak). The second site rests on the threshold proxy: on each hospital's own peer-group medians, Palisades by itself returns $0.30 per $1 (5th of 8, behind Princeton $0.54, Monmouth $0.35 and Ocean $0.31); Inspira stays first.
 
 Table 7. Targeted design at each client hospital alone, ranked by benefit-cost ratio (full-strength year; US$ thousands a year).[^sites]
 
@@ -177,8 +177,8 @@ Table 7. Targeted design at each client hospital alone, ranked by benefit-cost r
 | 8 | The University Hospital (Low) | 11 | −28.0 | $0.02 |
 
 - Princeton Plainsboro has the group's largest estimated FY2026 penalty but ranks third: 65% of it ($249K) is hip/knee replacement, which this program does not address (Section 8).
-- Most of the pilot's value is at Inspira Mullica Hill, which alone would lose about $3K a year. Palisades adds $30K a year of net cost, 87 patients a year (76% more to measure) and a Mid volume setting.
-- Even at a 20% effect only Inspira Mullica Hill would pay back alone ($1.92 per $1); Palisades would reach $0.70 and the other six $0.62 or less.[^sites]
+- Most of the pilot's modeled value is at Inspira Mullica Hill, which alone would lose about $3K a year; its FY2027 CMS cut is about half our baseline there, so the site split needs checking before go-live (Table 14). Palisades adds $30K a year of net cost, 87 patients a year (76% more to measure) and a Mid volume setting.
+- Even at a 20% effect only Inspira Mullica Hill would pay back alone ($1.92 per $1); Palisades would reach $0.70 and the other six $0.62 or less, with Princeton and Ocean worse than at 10% ($0.26 and $0.06): their targeted scores already end below the threshold at 10%, so each further readmission avoided costs $1,748 of margin and earns no relief.[^sites]
 
 ### 5.4 National view
 
@@ -189,7 +189,7 @@ Table 8. Where each design would pay back: all payment-eligible US hospitals, ba
 | Broad | 2,688 | 0 (0%) | 0 (0%) |
 | Targeted | 1,828 | 33 (1.8%) | 137 (7.5%) |
 
-The result is not specific to the illustrative group. The 33 hospitals where the targeted design pays back are all High volume with large current penalties: a median estimated FY2026 penalty of about $1.0M, against $67K across all 1,828.
+The result is not specific to the illustrative group. The 33 hospitals where the targeted design pays back are all High volume with large estimated FY2026 penalties (median about $1.0M, against $67K across all 1,828).
 
 ## 6. Timing: penalty relief lags program cost
 
@@ -207,7 +207,7 @@ Table 9. Targeted pilot by fiscal year (US$ thousands). Effect share = program m
 | FY2032 | Jul 2028–Jun 2030 | 24 | 100% | 130.3 | 110.1 | 12.7 | −33.0 | −500.8 | −19.7 |
 | **Total** | | | | **709.3** | **275.3** | **66.8** | **−500.8** | | **−128.2** |
 
-FY2027 covers January–September 2027 only, at half strength. Over the six years the pilot prevents about 38 readmissions; the annual hospital net improves every year but stays negative (six-year NPV at 7%: −$439K).
+FY2027 covers January–September 2027 only, at half strength. Over the six years the pilot prevents about 38 readmissions; from FY2028 on, the annual hospital net improves every year but stays negative (six-year NPV at 7%: −$439K).
 
 ## 7. Sensitivity
 
@@ -288,7 +288,7 @@ Table 14. Risks and upsides. Direction = effect on the pilot's hospital net.
 | Factor | Direction | What we know | Handling |
 |---|---|---|---|
 | Trial effects shrink at scale | Worse | Pre-2002 trials averaged RR 0.56, later ones 0.89 (Leppin 2014); CCTP showed no hospital-wide effect; 13 of 15 Medicare care-coordination trials were null (Peikes 2009); PACT-HF was not significant. At a 3% effect the pilot loses about $101K a year ($0.22 per $1).[^calc] | Recent-trial effect in the base case; month-12 gate |
-| Penalties are volatile | Either | Large FY2026 cuts shrank in FY2027 and small ones grew (Section 3.4); CMS's actual cut went from 0.87% to 0.23% at Inspira Mullica Hill and from 0.61% to 1.19% at Palisades, which may partly reflect the rule change. A score that falls below the threshold on its own leaves no penalty to avoid. | Refresh with CMS's FY2027 condition-level data (early 2027) |
+| Penalties are volatile | Either | Large FY2026 cuts shrank in FY2027 and small ones grew (Section 3.4); CMS's actual cut went from 0.87% to 0.23% ($94K on our payment base) at Inspira Mullica Hill and from 0.61% to 1.19% ($161K) at Palisades, which may partly reflect the rule change. The group's FY2027 cuts total about $0.40M against our FY2029+ baseline of $644K (Inspira $191K, Palisades $59K): the pilot pair's total holds ($255K vs $249K), its split does not. Under different rules and thresholds, FY2027 is a warning, not a replacement baseline.[^calc] A score that falls below the threshold on its own leaves no penalty to avoid. | Refresh with CMS's FY2027 condition-level data (early 2027) |
 | Sepsis measure from FY2030 | Either | Enters payment in FY2030 (confidential reports for FY2028–FY2029); CMS estimated it would raise total HRRP penalties by about 47%. Its first window (Jul 2026–Jun 2028) is open. Not modeled: no hospital results yet. | Review the confidential reports |
 | Freed beds refilled | Better | No margin lost: pilot −$20K a year ($0.84 per $1). | Check occupancy |
 | Star rating and value-based purchasing | Better (not modeled) | The star rating's Readmission group (22% weight) includes excess days in acute care (EDAC) after AMI, heart failure and pneumonia stays, the CABG, COPD and hip/knee readmission measures and hospital-wide readmission. MSPB (value-based purchasing) counts 30-day post-discharge spending, readmissions included. | Not counted |
@@ -304,8 +304,8 @@ Table 14. Risks and upsides. Direction = effect on the pilot's hospital net.
 ### 9.1 Recommendation
 
 1. **Do not fund the group-wide program on financial grounds.** It would cost about $1.12M a year to avoid about $292K of penalty ($0.19 per $1), and it loses $479K a year even for payers and hospital together.
-2. **If the group wants to act on readmissions as a quality issue, run a 12-month pilot** of the targeted design at Inspira Mullica Hill and Palisades: about $90K over the first 12 months (FY2027 budget: $68K) and $130K a year at full strength, preventing about 7 readmissions a year at the base effect.[^budget] Budget it as a quality investment with an expected hospital net of about −$33K a year, not as a cost saving.
-3. **Ask payers to co-fund before go-live:** the Medicare Advantage plans and ACO partners the group contracts with, for at least 27% of the payer savings the pilot generates.
+2. **If the group wants to act on readmissions as a quality issue, run a two-year pilot with a month-12 checkpoint** of the targeted design at Inspira Mullica Hill and Palisades: about $90K over the first 12 months at half enrollment (FY2027 budget: $68K) and $130K a year at full strength, preventing about 7 readmissions a year at the base effect.[^budget] Budget it as a quality investment with an expected hospital net of about −$33K a year, not as a cost saving. Before go-live, confirm both sites with each hospital's CMS Hospital-Specific Report and FY2027 condition-level data (early 2027): Inspira's FY2027 cut fell to 0.23%, about half our baseline in dollars; Palisades' rose to 1.19% (Section 5.3).
+3. **Ask payers to co-fund before go-live:** the Medicare Advantage plans and ACO partners the group contracts with, for at least 27% of the payer savings the pilot generates ($33K of $123K a year). About 59% of those savings accrue to traditional Medicare, which shares savings only through its own programs (such as ACOs); from MA plans alone, $33K is about 65% of theirs.
 4. **Separately, review hip/knee readmissions at Princeton Plainsboro** before committing money there, after checking CMS's FY2027 condition-level data (the hospital's FY2027 cut fell to 0.04%).
 
 ### 9.2 Pilot design
@@ -358,7 +358,7 @@ Table 17. Owners of the pilot and related actions (illustrative roles, like the 
 
 ## Notes
 
-[^calc]: Computed for this document with `src.cost_model.evaluate` on the pilot, changing only the input named: full pass-through +$25.5K a year ($1.20 per $1; penalty avoided $169K); 3% effect −$101K ($0.22 per $1); payment +15% −$16.4K. Condition shares from `client.penalty_by_condition`: ($510,953 + $176,535) ÷ $1,231,071.
+[^calc]: Computed for this document with `src.cost_model.evaluate` on the pilot, changing only the input named: full pass-through +$25.5K a year ($1.20 per $1; penalty avoided $169K); 3% effect −$101K ($0.22 per $1); payment +15% −$16.4K. Condition shares from `client.penalty_by_condition`: ($510,953 + $176,535) ÷ $1,231,071. FFS-only (reach 0.177) and peer-group thresholds (`cms_validation_thresholds.csv`): `business_case.robustness`. FY2027 dollars: our penalty × CMS FY2027 cut ÷ our FY2026 cut (`validation.client`).
 [^fy26]: Broad: the `broad_fy2026_rules` scenario. Pilot: `evaluate` with MA share 0 and a 3-year window (cost $97K, penalty avoided $105K).
 [^pers]: CMS Table 15 cuts for FY2026 and FY2027 (`cms_persistence_hospital.parquet`; `validation.persistence`): least-squares slope 0.578, intercept +0.0016, correlation 0.573, n = 2,894. Means computed from the same table.
 [^payback]: `bc_phase_in.parquet` (pilot): payer savings ($123K a year at full strength) total $648K over FY2027–FY2032 (5.25 full-strength-equivalent years); a share s adds s × $648K to the cumulative −$501K, which reaches zero at s ≈ 77%.

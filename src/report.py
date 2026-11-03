@@ -189,7 +189,7 @@ def build() -> None:
         columns={"penalty_threshold_err": "threshold"})
     figs["heat"] = _fig(charts.threshold_heatmap(
         thr_rows, short, "Red cells are the conditions being penalized; the number is the gap above the threshold",
-        "ERR minus penalty threshold by hospital and condition (blue = below threshold, no penalty; blank = too few cases)"))
+        "ERR minus penalty threshold by hospital and condition (blue = below threshold, no penalty; blank = no CMS score: too few cases or not available)"))
     pers = (v.get("persistence") or {})
     ppath = ROOT / "data" / "processed" / "cms_persistence_hospital.parquet"
     if pers and ppath.exists():
@@ -226,7 +226,8 @@ def build() -> None:
     be = bc["break_even"]
     figs["grid"] = _fig(charts.breakeven_heatmap(
         g, "relative_reduction", "cost_per_enrollee", "hospital_net", (p_tgt.relative_reduction, p_tgt.cost_per_enrollee),
-        f"Break-even needs about a {pct(be['pilot_relative_reduction'])} readmission reduction at $400 per patient",
+        f"Break-even needs about a {pct(be['pilot_relative_reduction'])} base-condition reduction (about "
+        f"{pct(bc['pooled_break_even_reduction'])} across enrolled patients) at $400 per patient",
         "Pilot hospital net per year for combinations of effect size and cost per patient; black line = break-even",
         "Readmission reduction among enrolled (base condition)", "Cost per enrolled patient"))
     mc = data.table("bc_monte_carlo")
@@ -335,9 +336,9 @@ penalties. A group-wide version would return about ${{ "%.2f"|format(broad.benef
 start with a measured pilot at {{ pilot_names }} and ask payers to share savings.</div>
 <div class="kpis">
 <div class="kpi"><div class="l">Hospitals penalized nationally (our estimate)</div><div class="v">{{ "{:,}".format(nat.hospitals_penalized) }}</div><div class="s">CMS actual {{ "{:,}".format(kn.fy2026_hospitals_penalized) }}</div></div>
-<div class="kpi"><div class="l">Group's estimated penalty (FY2026)</div><div class="v">{{ money(cl.total_penalty) }}/yr</div><div class="s">{{ cl.hospitals_penalized }} of 8 hospitals penalized</div></div>
+<div class="kpi"><div class="l">Group's estimated penalty (FY2026)</div><div class="v">{{ money(cl.total_penalty) }}/yr</div><div class="s">{{ cl.hospitals_penalized }} of 8 penalized{% if v.client_cms_dollars_fy2027 %} · CMS's FY2027 cuts: about {{ money(v.client_cms_dollars_fy2027) }}{% endif %}</div></div>
 <div class="kpi"><div class="l">Group-wide program</div><div class="v">{{ money(broad.hospital_net) }}/yr</div><div class="s">hospital net; costs {{ money(broad.program_cost) }}</div></div>
-<div class="kpi"><div class="l">Best-placed pilot</div><div class="v">${{ "%.2f"|format(pilot.benefit_cost_ratio) }} per $1</div><div class="s">break-even needs ≥{{ pct(be.pilot_relative_reduction) }} fewer readmissions</div></div>
+<div class="kpi"><div class="l">Best-placed pilot (base case)</div><div class="v">${{ "%.2f"|format(pilot.benefit_cost_ratio) }} per $1</div><div class="s">break-even needs about {{ pct(bc.pooled_break_even_reduction) }} fewer readmissions among enrolled patients</div></div>
 </div>
 <h3>Three findings</h3>
 <ol>{% for f in finds %}<li><p>{{ f }}</p></li>{% endfor %}</ol>
@@ -368,7 +369,7 @@ these only to test the method. We classify <strong>{{ pct(v.agreement, 1) }}</st
 with CMS's actual cut (average among penalized hospitals: ours {{ pct(v.mean_reduction_ours, 2) }} vs CMS {{ pct(v.mean_reduction_cms, 2) }}).
 The relative payment per case by condition comes from the same CMS release (table below), so the cut correlation partly reflects that calibration.
 The penalized/not-penalized agreement does not depend on payments at all.</p>
-{% if figs.validation %}<div class="chart">{{ figs.validation }}</div>{% endif %}
+{% if figs.validation %}<div class="chart">{{ figs.validation }}</div>{% else %}<p class="note">Hospital-level comparison chart omitted: run <code>python run.py --validate</code> to download CMS's penalty files and add it.</p>{% endif %}
 <details><summary>Hidden discharge counts: our estimate vs CMS's actual counts</summary>{{ tables.imputation }}
 <p class="note">The midpoint rule is close for most conditions but overstates hip/knee by about a third, where readmissions are rare and the allowed range is wide.</p></details>
 <details><summary>Penalty thresholds: CMS peer groups vs the national median we use</summary>{{ tables.thresholds }}
@@ -415,9 +416,9 @@ same group. Coefficients are associations, not causes.</p>
 <h3>How sensitive are the dollar estimates?</h3>{{ tables.pen_sens }}
 {% if figs.persist %}<h3>Penalties are a moving target</h3><div class="chart">{{ figs.persist }}</div>
 <p>Hospitals with the biggest FY2026 cuts saw them shrink the next year (top tenth: {{ pct(pers.top_decile_mean_cut_fy2026, 2) }} →
-{{ pct(pers.top_decile_mean_cut_fy2027, 2) }}; {{ pct(pers.top_decile_share_losing_half) }} lost more than half). Part of this is the FY2027 rule change,
-part is regression to the mean. The business case therefore forecasts the penalty that would remain without a program instead of assuming
-today's penalty continues.</p>{% endif %}
+{{ pct(pers.top_decile_mean_cut_fy2027, 2) }}; {{ pct(pers.top_decile_share_losing_half) }} lost more than half). Part of this may reflect the FY2027 rule change
+and the 12 months the two windows share; part is regression to the mean. The business case therefore forecasts the penalty that would remain without a program instead of assuming
+today's penalty continues.</p>{% else %}<p class="note">FY2026→FY2027 persistence chart omitted: run <code>python run.py --validate</code> to add it.</p>{% endif %}
 
 <h2 id="business">7. Business case: post-discharge follow-up</h2>
 <p>The program enrolls higher-risk heart failure and pneumonia patients for a pharmacist medication review, a nurse contact within 72 hours and a

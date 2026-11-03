@@ -85,7 +85,7 @@ chart(charts.penalty_by_hospital(
 rows = sub[sub["facility_id"].isin(top_ids) & sub["has_err"]].assign(threshold=lambda d: d["condition_code"].map(thresholds))
 chart(charts.threshold_heatmap(
     rows, names, "Red cells are the conditions being penalized; the number is the gap above the threshold",
-    "ERR minus penalty threshold by hospital and condition (blue = below threshold, no penalty; blank = too few cases)"),
+    "ERR minus penalty threshold by hospital and condition (blue = below threshold, no penalty; blank = no CMS score (too few cases or not available))"),
     key="heat")
 
 md("## Penalties are a moving target")

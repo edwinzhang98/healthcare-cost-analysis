@@ -27,9 +27,9 @@ Rules that apply to a program starting in 2027 (FY2027 onward)
 --------------------------------------------------------------
 * The CMS window is 2 years (July N-4 to June N-2), not 3.
 * Medicare Advantage (MA) patients count in the ERR, but the penalty is still
-  charged only on traditional (fee-for-service) Medicare payments. So to move
-  the score, the program must serve MA patients too: enrollment and cost scale
-  with all Medicare patients (FFS volume / (1 - ma_share)), the penalty base
+  charged only on traditional (fee-for-service) Medicare payments. A program
+  that enrolls by risk rather than payer serves MA patients too: enrollment and
+  cost scale with all Medicare patients (FFS volume / (1 - ma_share)), the penalty base
   does not. Setting ma_share = 0 reproduces the FY2026 rules.
 
 Money per avoided readmission (one consistent set, from two MedPAC figures)

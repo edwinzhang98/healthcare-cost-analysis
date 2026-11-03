@@ -45,7 +45,7 @@ states = states.assign(hospitals=states["n_hospitals"].map("{:,}".format),
 top = states.sort_values(col, ascending=False).head(3)
 top_txt = ", ".join(f"{r.state} ({format(r[col], fmt)})" for _, r in top.iterrows())
 chart(charts.state_tile_map(
-    states, col, f"Highest {metric_label.lower()} for {cond_name}: {top_txt}",
+    states, col, f"Highest {metric_label[0].lower() + metric_label[1:]} for {cond_name}: {top_txt}",
     f"{metric_label} by state, payment-eligible hospitals, FY2026 program (Jul 2021–Jun 2024). Maryland is exempt.",
     cb, diverging_mid=mid, fmt=fmt, hover_cols={"hospitals": "Hospitals", "sample_note": "Sample"}), key="map")
 show_data(states[["state", "n_hospitals", "n_results", "mean_err", "mean_err_ci_low", "mean_err_ci_high",
@@ -101,19 +101,17 @@ show_data(st_tab[["segment_value", "n_hospitals", "n_results", "mean_err", "mean
                   "share_above_threshold", "share_discharges", "share_excess_readmissions", "share_penalty",
                   "penalty_per_discharge", "small_sample_flag"]].round(4))
 
-if True:
-    curve = table("concentration_curve")
-    chart(charts.concentration(
-        curve, f"The top 10% of hospitals carry {pct(nat['top10_share_of_penalty'])} of penalty dollars",
-        "Cumulative share of estimated penalty $, hospitals ranked from highest to lowest penalty"), key="conc")
-if True:
-    coefs = table("regression_coefs")
-    info = nat["regression"]["info"]
-    chart(charts.coefficient_plot(
-        coefs, "Ownership and region stay associated with ERR after adjusting for the others",
-        f"Adjusted difference in ERR points, one model with all factors plus condition; "
-        f"{info['n_rows']:,} results from {info['n_hospitals']:,} hospitals; hollow = not significant"), key="coef")
-    show_data(coefs.round(3), "Show the model estimates")
+curve = table("concentration_curve")
+chart(charts.concentration(
+    curve, f"The top 10% of hospitals carry {pct(nat['top10_share_of_penalty'])} of penalty dollars",
+    "Cumulative share of estimated penalty $, hospitals ranked from highest to lowest penalty"), key="conc")
+coefs = table("regression_coefs")
+info = nat["regression"]["info"]
+chart(charts.coefficient_plot(
+    coefs, "Ownership and region stay associated with ERR after adjusting for the others",
+    f"Adjusted difference in ERR points, one model with all factors plus condition; "
+    f"{info['n_rows']:,} results from {info['n_hospitals']:,} hospitals; hollow = not significant"), key="coef")
+show_data(coefs.round(3), "Show the model estimates")
 
 how_to_read(
     """

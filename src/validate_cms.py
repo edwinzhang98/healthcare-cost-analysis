@@ -183,7 +183,8 @@ def run() -> dict | None:
     t27 = load_table15("table15_fy2027", 2027)
     cg = (dim[dim["facility_id"].isin(client.client_ids())][["facility_id", "facility_name", "size_band"]]
           .merge(ph[["facility_id", "payment_reduction_pct", "penalty_est_annual"]], on="facility_id", how="left")
-          .merge(t26, on="facility_id", how="left").merge(t27, on="facility_id", how="left"))
+          .merge(t26, on="facility_id", how="left").merge(t27, on="facility_id", how="left")
+          .merge(hosp[["facility_id", "cms_peer_group", "cms_dual_proportion"]], on="facility_id", how="left"))
     cg["cms_reduction_fy2026"] = 1 - cg["cms_paf_fy2026"]
     cg["cms_reduction_fy2027"] = 1 - cg["cms_paf_fy2027"]
     cg = cg.sort_values("facility_id")

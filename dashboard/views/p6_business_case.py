@@ -125,18 +125,16 @@ st.caption(f"Per avoided readmission: payers save about {money(p.payment_per_rea
            f"loses that payment but saves {money(p.variable_cost_per_readmission)} of variable cost, so it loses "
            f"{money(p.lost_margin_per_readmission)} of margin; payers and hospital together save "
            f"{money(p.variable_cost_per_readmission)}.".replace("$", "&#36;"), unsafe_allow_html=True)
-if True:
-    chart(charts.waterfall(
-        t, p.hospital_share_of_savings,
-        f"Each $1 of program cost returns ${t['benefit_cost_ratio']:.2f} to the hospital" if t["program_cost"] else "No program",
-        "Hospital view, US$ per year at steady state: avoided penalty + payer savings shared back − lost margin − program cost"),
-        key="wf")
-if True:
-    chart(charts.phase_in_chart(
-        ph, p.hospital_share_of_savings,
-        "Penalty relief arrives two years after the program starts" if t["avoided_penalty"] > 0 else "No penalty relief",
-        f"Hospital view by fiscal year; program starts {iv['program_start']} at half strength for 12 months; "
-        "CMS scores a 2-year window that ends 15 months before each fiscal year"), key="phase")
+chart(charts.waterfall(
+    t, p.hospital_share_of_savings,
+    f"Each $1 of program cost returns ${t['benefit_cost_ratio']:.2f} to the hospital" if t["program_cost"] else "No program",
+    "Hospital view, US$ per year at steady state: avoided penalty + payer savings shared back − lost margin − program cost"),
+    key="wf")
+chart(charts.phase_in_chart(
+    ph, p.hospital_share_of_savings,
+    "Penalty relief arrives two years after the program starts" if t["avoided_penalty"] > 0 else "No penalty relief",
+    f"Hospital view by fiscal year; program starts {iv['program_start']} at half strength for 12 months; "
+    "CMS scores a 2-year window that ends 15 months before each fiscal year"), key="phase")
 show_data(ph[["fiscal_year", "cms_window", "program_share_of_cms_window", "program_cost", "avoided_penalty",
               "savings_shared_with_hospital", "lost_margin", "system_savings", "hospital_net", "hospital_net_cum",
               "combined_net", "combined_net_cum"]].round(2),
@@ -144,24 +142,23 @@ show_data(ph[["fiscal_year", "cms_window", "program_share_of_cms_window", "progr
 
 md("## Which assumptions matter most")
 tor = cm.tornado(M, p)
-if True:
-    flips = tor[tor["sign_flips"]]["label"].tolist()
-    chart(charts.tornado_chart(
-        tor, t["hospital_net"],
-        ("Conclusion holds under every ±30% change" if not flips else
-         f"{len(flips)} of {len(tor)} inputs can flip the result at ±30%"),
-        "Hospital net per year when one input moves 30% down (orange) or up (blue); red line = break-even"), key="tor")
-if True:
-    xs = np.round(np.arange(0.02, 0.305, 0.02), 3)
-    ys = np.arange(100, 1001, 50)
-    grid = cm.grid(M, p, "relative_reduction", xs, "cost_per_enrollee", ys)
-    be = cm.break_even(M, p, "relative_reduction", lo=0.0, hi=0.6)
-    chart(charts.breakeven_heatmap(
-        grid, "relative_reduction", "cost_per_enrollee", "hospital_net", (p.relative_reduction, p.cost_per_enrollee),
-        (f"Break-even needs at least a {pct(be, 1)} readmission reduction at this cost" if be is not None
-         else "No break-even within a 0-60% effect at this cost"),
-        "Hospital net per year for combinations of effect size and cost per patient; black line = break-even",
-        "Readmission reduction among enrolled (base condition)", "Cost per enrolled patient"), key="grid")
+flips = tor[tor["sign_flips"]]["label"].tolist()
+chart(charts.tornado_chart(
+    tor, t["hospital_net"],
+    ("Conclusion holds under every ±30% change" if not flips else
+     f"{len(flips)} of {len(tor)} inputs can flip the result at ±30%"),
+    "Hospital net per year when one input moves 30% down (orange) or up (blue); red line = break-even"), key="tor")
+xs = np.round(np.arange(0.02, 0.305, 0.02), 3)
+ys = np.arange(100, 1001, 50)
+grid = cm.grid(M, p, "relative_reduction", xs, "cost_per_enrollee", ys)
+be = cm.break_even(M, p, "relative_reduction", lo=0.0, hi=0.6)
+chart(charts.breakeven_heatmap(
+    grid, "relative_reduction", "cost_per_enrollee", "hospital_net", (p.relative_reduction, p.cost_per_enrollee),
+    (f"Break-even needs at least a {pct(be, 1)} base-condition reduction at this cost (heart failure counts 1.2×)"
+     if be is not None
+     else "No break-even within a 0-60% effect at this cost"),
+    "Hospital net per year for combinations of effect size and cost per patient; black line = break-even",
+    "Readmission reduction among enrolled (base condition)", "Cost per enrolled patient"), key="grid")
 
 sens = analysis.sensitivity_table(M, p)
 sv = sens.pivot_table(index="label", columns="change", values=["hospital_net", "combined_net"]).round(0)

@@ -64,6 +64,65 @@ def model_inputs(facility_ids=None) -> cm.ModelInputs:
     return cm.ModelInputs.build(hc, payments(), shrinkage_k())
 
 
+def peer_threshold_inputs(facility_ids) -> cm.ModelInputs | None:
+    """Model inputs with each hospital's CMS FY2026 dual-eligible peer-group median ERR as the threshold instead of
+    the national median (robustness check). Uses the committed validation tables, so it works without --validate;
+    returns None if they are missing."""
+    tdir = ROOT / "reports" / "tables"
+    thr_path, cl_path = tdir / "cms_validation_thresholds.csv", tdir / "cms_validation_client.csv"
+    if not (thr_path.exists() and cl_path.exists()):
+        return None
+    cl = pd.read_csv(cl_path, dtype={"facility_id": str})
+    if "cms_peer_group" not in cl.columns:
+        return None
+    thr = pd.read_csv(thr_path).set_index("condition_code")
+    group = cl.set_index("facility_id")["cms_peer_group"]
+    hc = data.hospital_conditions()
+    hc = hc[hc["facility_id"].isin(list(facility_ids))].copy()
+    if not hc["facility_id"].isin(group.index).all():
+        return None
+    hc["penalty_threshold_err"] = [
+        float(thr.loc[c, f"peer_group_{int(group[f])}"]) if c in thr.index else t
+        for f, c, t in zip(hc["facility_id"], hc["condition_code"], hc["penalty_threshold_err"])]
+    return cm.ModelInputs.build(hc, payments(), shrinkage_k())
+
+
+def robustness(m_pilot: cm.ModelInputs, p_tgt: cm.ProgramParams, pilot: list[str]) -> dict:
+    """What-ifs quoted in the business case: CMS peer-group thresholds and an FFS-only program."""
+    out = {}
+    ffs = cm.evaluate(m_pilot, replace(p_tgt, reach=p_tgt.reach * (1 - p_tgt.ma_share)))["totals"]
+    out["ffs_only_pilot"] = {"reach_all_medicare": _r(p_tgt.reach * (1 - p_tgt.ma_share), 3),
+                             "program_cost": _r(ffs["program_cost"], 0), "avoided_penalty": _r(ffs["avoided_penalty"], 0),
+                             "hospital_net": _r(ffs["hospital_net"], 0)}
+    mp = peer_threshold_inputs(pilot)
+    mc_all = peer_threshold_inputs(client.client_ids())
+    if mp is not None and mc_all is not None:
+        # same patients as the base case (scope fixed); only the thresholds that set the penalty change
+        assert (mp.facility_id == m_pilot.facility_id).all() and (mp.condition_code == m_pilot.condition_code).all()
+        t = cm.evaluate(replace(mp, above_threshold=m_pilot.above_threshold), p_tgt)
+        hosp = t["hospitals"].set_index("facility_id")
+        m_nat = model_inputs(client.client_ids())
+        alone = []
+        for f in client.client_ids():
+            tn = cm.evaluate(m_nat.subset([f]), p_tgt)["totals"]
+            tp = cm.evaluate(mc_all.subset([f]), p_tgt)["totals"]
+            alone.append({"facility_id": f, "bcr_national_threshold": _r(tn["benefit_cost_ratio"]),
+                          "bcr_peer_threshold": _r(tp["benefit_cost_ratio"]),
+                          "hospital_net_peer_threshold": _r(tp["hospital_net"], 0)})
+        # each hospital alone under its peer-group thresholds, with the design rule (target conditions above threshold)
+        alone = sorted(alone, key=lambda r: -(r["bcr_peer_threshold"] or -1))
+        out["peer_thresholds"] = {
+            "pilot": {k_: _r(t["totals"][k_], 2) for k_ in ("penalty_before", "avoided_penalty", "hospital_net",
+                                                             "benefit_cost_ratio", "program_cost")},
+            "pilot_by_hospital": {f: {"penalty_before": _r(hosp.loc[f, "penalty_before"], 0),
+                                      "avoided_penalty": _r(hosp.loc[f, "avoided_penalty"], 0),
+                                      "hospital_net": _r(hosp.loc[f, "hospital_net"], 0)} for f in pilot if f in hosp.index},
+            "each_hospital_alone": alone,
+            "rank_peer_threshold": [r["facility_id"] for r in alone],
+        }
+    return out
+
+
 def pilot_hospitals(n: int | None = None) -> list[str]:
     """Client hospitals where each program dollar returns the most to the hospital (benefit-cost ratio),
     i.e. ranked on the penalty a heart failure / pneumonia program can actually address, not on total
@@ -447,6 +506,10 @@ def build() -> dict:
             "break_even": {k_: _r(v) for k_, v in be.items()},
             "pilot_unit_economics": pilot_unit_economics(m_pilot, p_tgt),
             "pilot_power": pilot_power(m_pilot, p_tgt, be["pilot_relative_reduction"]),
+            "pooled_break_even_reduction": _r(be["pilot_relative_reduction"]
+                                              * pilot_power(m_pilot, p_tgt, None)["base_case_relative_reduction"]
+                                              / p_tgt.relative_reduction),
+            "robustness": robustness(m_pilot, p_tgt, pilot),
             "monte_carlo": {"runs": int(len(mc)), "seed": seed,
                             "p_hospital_net_positive": _r((mc["hospital_net"] > 0).mean(), 3),
                             "p_combined_net_positive": _r((mc["combined_net"] > 0).mean(), 3),
@@ -479,6 +542,10 @@ def validation_metrics() -> dict | None:
     imp = pd.read_csv(tdir / "cms_validation_imputation.csv").set_index("condition_code")
     peers = pd.read_csv(tdir / "cms_validation_peer_groups.csv")
     cl = pd.read_csv(tdir / "cms_validation_client.csv", dtype={"facility_id": str})
+    # CMS's actual cuts applied to our payment base (our penalty ÷ our cut = our base payments)
+    base_pay = cl["penalty_est_annual"] / cl["our_estimated_reduction_fy2026"]
+    cl["cms_dollars_fy2026"] = base_pay * cl["cms_reduction_fy2026"]
+    cl["cms_dollars_fy2027"] = base_pay * cl["cms_reduction_fy2027"]
     pers_path = tdir / "cms_validation_persistence.csv"
     pers = pd.read_csv(pers_path).set_index("metric")["value"].to_dict() if pers_path.exists() else {}
     pw_path = tdir / "cms_payment_weights.csv"
@@ -504,6 +571,8 @@ def validation_metrics() -> dict | None:
         "imputation_within_bounds": _r(imp.loc["ALL", "share_within_bounds"], 3),
         "peer_groups": peers.round(4).to_dict(orient="records"),
         "client": cl.round(5).to_dict(orient="records"),
+        "client_cms_dollars_fy2026": _r(cl["cms_dollars_fy2026"].sum(), 0),
+        "client_cms_dollars_fy2027": _r(cl["cms_dollars_fy2027"].sum(), 0),
     }
 
 

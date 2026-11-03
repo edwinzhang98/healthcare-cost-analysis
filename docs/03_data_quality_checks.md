@@ -225,7 +225,7 @@ CMS prints counts of 1,000 or more with a thousands separator ("2,393"), and `sr
 
 ## 11. Full automated check table
 
-**Table 11.** All 37 automated checks from the 2026-11-03 build, as generated in `data/processed/dq_checks_all.parquet` (31 SQL checks from `sql/09_dq_checks.sql`; P1–P6 from `src/analysis.py`), grouped by category. Text as generated; "size" in P4 means the HRRP volume band.
+**Table 11.** All 37 automated checks from the 2026-11-03 build, as generated in `data/processed/dq_checks_all.parquet` (31 SQL checks from `sql/09_dq_checks.sql`; P1–P6 from `src/analysis.py`), grouped by category. Text as generated.
 
 | ID | Status | Category | Check | Expected | Actual | Note |
 |---|---|---|---|---|---|---|
@@ -264,7 +264,7 @@ CMS prints counts of 1,000 or more with a thousands separator ("2,393"), and `sr
 | P2 | PASS | Known numbers | Estimated penalized hospitals vs CMS FY2026 (2,304) | within ±5% of 2,304 | 2,336 (+1.4%) | CMS Table 15 / FY2026 IPPS final rule impact analysis |
 | P3 | PASS | Known numbers | Estimated national penalty \$ vs nearest CMS published totals (\$316M-\$361M) | same order of magnitude | \$296M | CMS did not publish an FY2026 dollar total; our payment assumptions are conservative (see assumptions B3) |
 | P6 | PASS | Known numbers | Fitted shrinkage matches published measure reliability (HF pass-through at 1,019 cases ≈ 0.70) | 0.65-0.80 | 0.73 | Thompson et al. 2016: HF needs ~1,019 cases for 0.70 reliability |
-| P4 | PASS | Reproducibility | Client group draw reproduces config.yaml (seed 42) | True | True | 8 hospitals, stratified by size |
+| P4 | PASS | Reproducibility | Client group draw reproduces config.yaml (seed 42) | True | True | 8 hospitals, stratified by HRRP volume band |
 | P5 | PASS | Reproducibility | Monte Carlo with fixed seed gives identical results on re-run | True | True | seed 42 |
 
 ## 12. Decisions taken because of these checks

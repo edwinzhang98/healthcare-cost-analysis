@@ -19,7 +19,8 @@
 --   only to apply the 3% cap and to express the penalty as a percentage.
 --
 --   The same logic is implemented in src/penalty.py (used by the dashboard for
---   what-if scenarios); 09_dq_checks.sql and src/quality.py reconcile the two.
+--   what-if scenarios); check P1 in src/analysis.py reconciles the two (max
+--   difference per hospital < $1).
 -- Grain   : mart_penalty_condition = facility_id x condition_code
 --           mart_penalty_hospital  = facility_id
 -- Inputs  : fct_hospital_condition, seed_condition_params

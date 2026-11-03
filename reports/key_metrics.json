@@ -1087,6 +1087,96 @@
       "min_detectable_reduction_12m": 0.522,
       "min_detectable_reduction_24m": 0.319
     },
+    "pooled_break_even_reduction": 0.1621,
+    "robustness": {
+      "ffs_only_pilot": {
+        "reach_all_medicare": 0.177,
+        "program_cost": 97400.0,
+        "avoided_penalty": 64960.0,
+        "hospital_net": -39949.0
+      },
+      "peer_thresholds": {
+        "pilot": {
+          "penalty_before": 240074.36,
+          "avoided_penalty": 98684.72,
+          "hospital_net": -44382.6,
+          "benefit_cost_ratio": 0.66,
+          "program_cost": 130338.98
+        },
+        "pilot_by_hospital": {
+          "310069": {
+            "penalty_before": 206575.0,
+            "avoided_penalty": 75489.0,
+            "hospital_net": -2786.0
+          },
+          "310003": {
+            "penalty_before": 33500.0,
+            "avoided_penalty": 23196.0,
+            "hospital_net": -41597.0
+          }
+        },
+        "each_hospital_alone": [
+          {
+            "facility_id": "310069",
+            "bcr_national_threshold": 0.9605,
+            "bcr_peer_threshold": 0.6419,
+            "hospital_net_peer_threshold": -39975.0
+          },
+          {
+            "facility_id": "310010",
+            "bcr_national_threshold": 0.3601,
+            "bcr_peer_threshold": 0.5361,
+            "hospital_net_peer_threshold": -44366.0
+          },
+          {
+            "facility_id": "310075",
+            "bcr_national_threshold": 0.349,
+            "bcr_peer_threshold": 0.349,
+            "hospital_net_peer_threshold": -27706.0
+          },
+          {
+            "facility_id": "310052",
+            "bcr_national_threshold": 0.1429,
+            "bcr_peer_threshold": 0.3122,
+            "hospital_net_peer_threshold": -64987.0
+          },
+          {
+            "facility_id": "310003",
+            "bcr_national_threshold": 0.4957,
+            "bcr_peer_threshold": 0.3049,
+            "hospital_net_peer_threshold": -41597.0
+          },
+          {
+            "facility_id": "310074",
+            "bcr_national_threshold": 0.3224,
+            "bcr_peer_threshold": 0.2056,
+            "hospital_net_peer_threshold": -38874.0
+          },
+          {
+            "facility_id": "310061",
+            "bcr_national_threshold": 0.136,
+            "bcr_peer_threshold": 0.136,
+            "hospital_net_peer_threshold": -29626.0
+          },
+          {
+            "facility_id": "310119",
+            "bcr_national_threshold": 0.0237,
+            "bcr_peer_threshold": 0.0237,
+            "hospital_net_peer_threshold": -28048.0
+          }
+        ],
+        "rank_peer_threshold": [
+          "310069",
+          "310010",
+          "310075",
+          "310052",
+          "310003",
+          "310074",
+          "310061",
+          "310119"
+        ]
+      }
+    },
     "monte_carlo": {
       "runs": 2000,
       "seed": 42,
@@ -1332,8 +1422,12 @@
         "size_band": "Mid volume",
         "our_estimated_reduction_fy2026": 0.00825,
         "penalty_est_annual": 111698.39874,
+        "cms_peer_group": 5,
+        "cms_dual_proportion": 0.4938,
         "cms_reduction_fy2026": 0.0061,
-        "cms_reduction_fy2027": 0.0119
+        "cms_reduction_fy2027": 0.0119,
+        "cms_dollars_fy2026": 82607.48421,
+        "cms_dollars_fy2027": 161152.30526
       },
       {
         "facility_id": "310010",
@@ -1341,8 +1435,12 @@
         "size_band": "High volume",
         "our_estimated_reduction_fy2026": 0.01081,
         "penalty_est_annual": 383981.8905,
+        "cms_peer_group": 1,
+        "cms_dual_proportion": 0.1193,
         "cms_reduction_fy2026": 0.0088,
-        "cms_reduction_fy2027": 0.0004
+        "cms_reduction_fy2027": 0.0004,
+        "cms_dollars_fy2026": 312684.46717,
+        "cms_dollars_fy2027": 14212.93033
       },
       {
         "facility_id": "310052",
@@ -1350,8 +1448,12 @@
         "size_band": "High volume",
         "our_estimated_reduction_fy2026": 0.00218,
         "penalty_est_annual": 147652.37399,
+        "cms_peer_group": 1,
+        "cms_dual_proportion": 0.1091,
         "cms_reduction_fy2026": 0.0021,
-        "cms_reduction_fy2027": 0.0002
+        "cms_reduction_fy2027": 0.0002,
+        "cms_dollars_fy2026": 142111.68421,
+        "cms_dollars_fy2027": 13534.44612
       },
       {
         "facility_id": "310061",
@@ -1359,8 +1461,12 @@
         "size_band": "Low volume",
         "our_estimated_reduction_fy2026": 0.00499,
         "penalty_est_annual": 42867.7852,
+        "cms_peer_group": 4,
+        "cms_dual_proportion": 0.2794,
         "cms_reduction_fy2026": 0.0034,
-        "cms_reduction_fy2027": 0.0012
+        "cms_reduction_fy2027": 0.0012,
+        "cms_dollars_fy2026": 29211.83709,
+        "cms_dollars_fy2027": 10310.06015
       },
       {
         "facility_id": "310069",
@@ -1368,8 +1474,12 @@
         "size_band": "High volume",
         "our_estimated_reduction_fy2026": 0.00912,
         "penalty_est_annual": 373137.34626,
+        "cms_peer_group": 3,
+        "cms_dual_proportion": 0.1921,
         "cms_reduction_fy2026": 0.0087,
-        "cms_reduction_fy2027": 0.0023
+        "cms_reduction_fy2027": 0.0023,
+        "cms_dollars_fy2026": 356048.85188,
+        "cms_dollars_fy2027": 94127.85739
       },
       {
         "facility_id": "310074",
@@ -1377,8 +1487,12 @@
         "size_band": "Mid volume",
         "our_estimated_reduction_fy2026": 0.0049,
         "penalty_est_annual": 85705.37448,
+        "cms_peer_group": 5,
+        "cms_dual_proportion": 0.4074,
         "cms_reduction_fy2026": 0.0032,
-        "cms_reduction_fy2027": 0.0051
+        "cms_reduction_fy2027": 0.0051,
+        "cms_dollars_fy2026": 55964.77594,
+        "cms_dollars_fy2027": 89193.86165
       },
       {
         "facility_id": "310075",
@@ -1386,8 +1500,12 @@
         "size_band": "Mid volume",
         "our_estimated_reduction_fy2026": 0.00403,
         "penalty_est_annual": 74888.87013,
+        "cms_peer_group": 2,
+        "cms_dual_proportion": 0.1764,
         "cms_reduction_fy2026": 0.003,
-        "cms_reduction_fy2027": 0.0007
+        "cms_reduction_fy2027": 0.0007,
+        "cms_dollars_fy2026": 55699.21805,
+        "cms_dollars_fy2027": 12996.48421
       },
       {
         "facility_id": "310119",
@@ -1395,9 +1513,15 @@
         "size_band": "Low volume",
         "our_estimated_reduction_fy2026": 0.00342,
         "penalty_est_annual": 11138.66973,
+        "cms_peer_group": 5,
+        "cms_dual_proportion": 0.5115,
         "cms_reduction_fy2026": 0.0005,
-        "cms_reduction_fy2027": 0.0005
+        "cms_reduction_fy2027": 0.0005,
+        "cms_dollars_fy2026": 1626.81203,
+        "cms_dollars_fy2027": 1626.81203
       }
-    ]
+    ],
+    "client_cms_dollars_fy2026": 1035955.0,
+    "client_cms_dollars_fy2027": 397155.0
   }
 }

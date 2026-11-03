@@ -16,11 +16,11 @@ table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0} th,td{b
 th{color:#52514e} em{color:#52514e} hr{border:0;border-top:1px solid #e1e0d9;margin:14px 0}
 @media print{
   @page{size:Letter;margin:0.55in}
-  body{background:#fff;font-size:10.5pt;line-height:1.33}
+  body{background:#fff;font-size:10pt;line-height:1.3}
   .page{padding:0;max-width:none}
   h1{font-size:15pt;margin:0 0 2pt} h2{font-size:11.5pt;margin:9pt 0 3pt}
   p,li{margin:2.5pt 0} ul,ol{margin:3pt 0;padding-left:16pt}
-  table{font-size:8.8pt;margin:4pt 0} th,td{padding:2.5pt 4pt}
+  table{font-size:8.4pt;margin:4pt 0} th,td{padding:2.5pt 4pt}
 }
 """
 

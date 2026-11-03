@@ -40,7 +40,7 @@ peer_rows = hc[hc["facility_id"].isin(peers) & hc["has_err"]]
 name = short_name(hospital_names().get(fid, row["facility_name"]), 40)
 
 peer_desc = ", ".join({"ownership_group": f"{row['ownership_group'].lower()}",
-                       "size_band": f"{row['size_band'].lower()}-volume",
+                       "size_band": row['size_band'].lower().replace(" volume", "-volume"),
                        "census_region": f"{row['census_region']}",
                        "has_emergency_services": "same emergency-department status"}[k] for k in keys) or "all"
 st.caption(f"{name}: {row['ownership_group']} · {row['size_band']} ({row['eligible_discharges_3yr']:,.0f} eligible "
@@ -81,21 +81,26 @@ chart(charts.benchmark_strip(
     "ERR by condition: gray = peer hospitals (box = middle half), blue diamond = this hospital, red tick = national "
     "penalty threshold; right is worse"), key="bench")
 
+bench["status"] = np.where(bench["small_peer_group"] & bench["has_err"], bench["status"] + " (fewer than 10 peers)",
+                           bench["status"])
 tbl = (bench.assign(condition=bench["condition_code"].map(CONDITION_LABELS),
                     _o=bench["condition_code"].map({c: i for i, c in enumerate(charts.CONDITION_ORDER)}))
        .sort_values("_o")[["condition", "status", "target_err", "peer_median", "peer_p25", "peer_p75",
                            "percentile_vs_peers", "national_threshold", "readmissions_vs_peer_median", "n_peers",
                            "discharges_annual"]])
-num = lambda label, fmt: st.column_config.NumberColumn(label, format=fmt)
-st.dataframe(tbl.astype({c: float for c in tbl.columns if c not in ("condition", "status")}),
-             hide_index=True, width="stretch",
-             column_config={"condition": "Condition", "status": "Status",
-                            "target_err": num("This hospital's ERR", "%.3f"), "peer_median": num("Peer median", "%.3f"),
-                            "peer_p25": num("Peer 25th pct", "%.3f"), "peer_p75": num("Peer 75th pct", "%.3f"),
-                            "percentile_vs_peers": num("Higher than % of peers", "%.0f%%"),
-                            "national_threshold": num("Penalty threshold", "%.3f"),
-                            "readmissions_vs_peer_median": num("Readmissions/yr vs peer median", "%+.1f"),
-                            "n_peers": num("Peers scored", "%d"), "discharges_annual": num("Eligible discharges/yr", "%.0f")})
+# formatted as text so a missing score shows "–" (Streamlit prints "None" for empty numeric cells)
+fmts = {"target_err": "{:.3f}", "peer_median": "{:.3f}", "peer_p25": "{:.3f}", "peer_p75": "{:.3f}",
+        "percentile_vs_peers": "{:.0f}%", "national_threshold": "{:.3f}", "readmissions_vs_peer_median": "{:+.1f}",
+        "n_peers": "{:.0f}", "discharges_annual": "{:.0f}"}
+tbl_txt = tbl.copy()
+for c, f_ in fmts.items():
+    tbl_txt[c] = [("–" if pd.isna(x) else f_.format(float(x))) for x in tbl[c]]
+st.dataframe(tbl_txt, hide_index=True, width="stretch",
+             column_config={"condition": "Condition", "status": "Status", "target_err": "This hospital's ERR",
+                            "peer_median": "Peer median", "peer_p25": "Peer 25th pct", "peer_p75": "Peer 75th pct",
+                            "percentile_vs_peers": "Higher than % of peers", "national_threshold": "Penalty threshold",
+                            "readmissions_vs_peer_median": "Readmissions/yr vs peer median", "n_peers": "Peers scored",
+                            "discharges_annual": "Eligible discharges/yr"})
 
 md("## The client group side by side")
 cl = dim[dim["facility_id"].isin(client.client_ids())]
@@ -119,18 +124,23 @@ def _pct_color(v):
     return f"background-color: rgb({rgb[0]},{rgb[1]},{rgb[2]}); color: #0b0b0b"
 
 
-st.dataframe(grid.style.format("{:.0f}", subset=list(grid.columns[1:]), na_rep="–")
-             .map(_pct_color, subset=list(grid.columns[1:])),
+pcols = list(grid.columns[1:])
+grid_txt = grid.copy()
+for c in pcols:
+    grid_txt[c] = [("–" if pd.isna(x) else f"{x:.0f}") for x in grid[c]]
+st.dataframe(grid_txt.style.apply(lambda col: [_pct_color(x) for x in grid[col.name]], subset=pcols),
              hide_index=True, width="stretch")
 st.caption("Each cell = the hospital's percentile among its peers for that condition (50 = typical; higher = more "
-           "readmissions than peers). Red cells are where a hospital is worse than most similar hospitals; – = too few "
-           "cases to score.")
+           "readmissions than peers). Red cells are where a hospital is worse than most similar hospitals; – = no CMS score "
+           "(too few cases, or results not available this period; page 2 shows which).")
 
 how_to_read(
     """
-- **Peers** are hospitals that look like this one on the boxes you tick. Ownership and size are on by default because
-  they shape patient mix and resources. Ticking more boxes makes peers more similar but fewer, so percentiles get
-  noisier.
+- **Peers** are hospitals that look like this one on the boxes you tick. Ownership and HRRP volume band are on by
+  default because they go with patient mix and with how much data sits behind each score (the band counts
+  traditional-Medicare discharges in the six conditions, not hospital size). Ticking more boxes makes peers more
+  similar but fewer, so percentiles get noisier; a condition with fewer than 10 scored peers is flagged in the Status
+  column, and fewer than 30 peers overall triggers a warning.
 - **Chart:** each row is one condition. Gray dots are the peer hospitals' scores; the box marks the middle half of
   peers; the blue diamond is the selected hospital; the red tick is where the national penalty threshold sits. A
   diamond to the right of the box means the hospital readmits more patients than most of its peers for that condition.

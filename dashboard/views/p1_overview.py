@@ -23,15 +23,18 @@ hospitals, how much is at stake each year, and under which assumptions a follow-
 )
 
 be = bc["break_even"]
+v27 = (m.get("validation") or {}).get("client_cms_dollars_fy2027")
 kpis([
     ("Hospitals penalized nationally (FY2026, our estimate)", f"{nat['hospitals_penalized']:,}",
      f"CMS actual: {kn['fy2026_hospitals_penalized']:,} · {pct(nat['share_penalized_of_scored'])} of scored hospitals"),
-    ("Our group's estimated penalty", f"{money(cl['total_penalty'])}/yr",
-     f"{cl['hospitals_penalized']} of {len(cl['facility_ids'])} hospitals penalized (FY2026 program)"),
+    ("Our group's estimated penalty (FY2026)", f"{money(cl['total_penalty'])}/yr",
+     f"{cl['hospitals_penalized']} of {len(cl['facility_ids'])} penalized"
+     + (f" · CMS's FY2027 cuts: about {money(v27)}" if v27 else "")),
     ("Carried by 2 hospitals", pct(cl["top2_share"]),
      " + ".join(hospital_names()[h['facility_id']] for h in cl["hospitals"][:2])),
-    ("Follow-up program, best case", f"${pilot['benefit_cost_ratio']:.2f} per $1",
-     f"returned in avoided penalties; break-even needs ≥{pct(be['pilot_relative_reduction'])} fewer readmissions"),
+    ("Best-placed pilot (base case)", f"${pilot['benefit_cost_ratio']:.2f} per $1",
+     f"returned in avoided penalties; break-even needs about {pct(bc['pooled_break_even_reduction'])} fewer "
+     "readmissions among enrolled patients"),
 ])
 
 md("## Three things to know")

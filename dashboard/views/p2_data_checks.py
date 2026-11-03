@@ -21,22 +21,20 @@ md("""
 st.caption("Joined on Facility ID (CMS Certification Number, read as text to keep leading zeros). "
            "Source: CMS Provider Data Catalog (Care Compare). Raw files are not stored in the repo.")
 
-if True:
-    steps = pd.DataFrame([
-        ("Hospitals in HRRP file", d["hrrp_hospitals"]),
-        ("Found in Hospital General Info", d["matched_hospital_info"]),
-        ("Payment-eligible (excl. Maryland)", d["payment_eligible_hospitals"]),
-        ("With ≥1 scored condition", d["eligible_with_err"]),
-        ("Estimated penalized", m["national"]["hospitals_penalized"]),
-    ], columns=["step", "n"])
-    chart(charts.join_funnel(
-        steps, "20 hospitals drop out at the join; 43 Maryland hospitals are exempt",
-        "Hospitals at each step, HRRP file joined to Hospital General Information"), key="funnel")
-if True:
-    chart(charts.reporting_status(
-        table("fct_hospital_condition"),
-        "Hip/knee and bypass results are often hidden or unscored",
-        "Share of hospitals by what CMS published, per condition"), key="status")
+steps = pd.DataFrame([
+    ("Hospitals in HRRP file", d["hrrp_hospitals"]),
+    ("Found in Hospital General Info", d["matched_hospital_info"]),
+    ("Payment-eligible (excl. Maryland)", d["payment_eligible_hospitals"]),
+    ("With ≥1 scored condition", d["eligible_with_err"]),
+    ("Estimated penalized", m["national"]["hospitals_penalized"]),
+], columns=["step", "n"])
+chart(charts.join_funnel(
+    steps, "20 hospitals drop out at the join; 43 Maryland hospitals are exempt",
+    "Hospitals at each step, HRRP file joined to Hospital General Information"), key="funnel")
+chart(charts.reporting_status(
+    table("fct_hospital_condition"),
+    "Hip/knee and bypass results are often hidden or unscored",
+    "Share of hospitals by what CMS published, per condition"), key="status")
 
 md(
     f"""
@@ -57,7 +55,7 @@ dq = table("dq_checks_all")
 counts = dq["status"].value_counts()
 kpis([("Checks passed", f"{counts.get('PASS', 0)}", "as expected"),
       ("Warnings", f"{counts.get('WARN', 0)}", "known limitation, documented"),
-      ("Failures", f"{counts.get('FAIL', 0)}", "would block the analysis")])
+      ("Failures", f"{counts.get('FAIL', 0)}", "needs investigation before results are used")])
 cats = sorted(dq["category"].unique())
 f1, f2 = st.columns([3, 2])
 pick = f1.pills("Category", cats, selection_mode="multi", default=cats) or cats
@@ -78,7 +76,8 @@ md("## Do our penalty estimates match what CMS actually charged?")
 if v:
     kpis([
         ("Hospitals classified the same way", pct(v["agreement"], 1),
-         f"penalized: ours {v['ours_penalized']:,} vs CMS {v['cms_penalized']:,} (of {v['hospitals_compared']:,})"),
+         f"penalized: ours {v['ours_penalized']:,} vs CMS {v['cms_penalized']:,} among the {v['hospitals_compared']:,} "
+     f"hospitals we could compare (CMS's published total: {m['known_numbers']['fy2026_hospitals_penalized']:,})"),
         ("Correlation with CMS's actual cut", f"{v['r_pearson']:.2f}", f"rank correlation {v['r_spearman']:.2f}"),
         ("Average cut among penalized", f"{pct(v['mean_reduction_ours'], 2)}", f"CMS actual {pct(v['mean_reduction_cms'], 2)}"),
         ("Hidden discharge counts", f"{pct(v['imputation_within_bounds'])}", "of true values inside our low–high range"),
@@ -141,7 +140,7 @@ how_to_read(
   blue), only the score with hidden counts (light blue), or no score at all (grays). Hip/knee is mostly light blue:
   readmissions after joint replacement are rare (≈5%), so counts are often below CMS's privacy threshold.
 - **Checks table:** PASS = matches what we expected; WARN = a known limitation we work around and document; FAIL =
-  would stop the analysis (there are none). "Known numbers" checks compare our results with figures CMS has published.
+  needs investigation before results are used (there are none). "Known numbers" checks compare our results with figures CMS has published.
 - **Validation:** each dot is a hospital. If our estimate equalled CMS's actual payment cut, every dot would sit on
   the diagonal. Most cluster near it; misses come mainly from CMS's peer-group thresholds, which our files lack.
 - **Shrinkage chart:** read across the bottom (hospital size) and up (how much of a real change "counts"). The curve
