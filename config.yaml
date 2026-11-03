@@ -35,7 +35,7 @@ client_group:
   state: NJ
   seed: 42
   min_conditions: 3
-  size_plan: {Large: 3, Medium: 3, Small: 2}
+  size_plan: {High volume: 3, Mid volume: 3, Low volume: 2}
   facility_ids: ["310010", "310052", "310069", "310003", "310074", "310075", "310061", "310119"]
   target_hospital: "310010"   # largest estimated penalty in the group; used in docs/benchmarking.md
 
@@ -59,9 +59,10 @@ validation:
 intervention:
   program_start: 2027-01-01     # assumed go-live after the next budget cycle
   ramp_first_year: 0.5          # enrollment and effect at half strength in the first 12 months
-  discount_rate: 0.03
+  discount_rate: 0.07           # hospital cost of capital (assumption)
   horizon_years: 6              # FY2027-FY2032
   monte_carlo_runs: 2000
+  national_ma_share: 0.54       # KFF 2025: 54% of eligible beneficiaries in Medicare Advantage
   presets:
     broad:                      # the program as first proposed: every medical condition, every hospital
       label: Broad program (all medical conditions, half of patients)
@@ -73,9 +74,12 @@ intervention:
       cost_per_enrollee: 400
       fixed_cost_per_hospital: 25000
       cost_per_readmission: 19000
+      payment_to_cost: 0.892
+      variable_cost_share: 0.80
       hospital_share_of_savings: 0.0
-      lost_margin_per_readmission: 1750
-      ma_share: 0.50
+      beds_refilled: false
+      persistence: 0.5
+      ma_share: 0.41
       pass_through_mode: volume
     targeted:                   # recommended pilot design
       label: Targeted pilot (heart failure + pneumonia, higher-risk patients)
@@ -84,21 +88,26 @@ intervention:
       reach: 0.30
       risk_multiplier: 1.5
       relative_reduction: 0.10
-      cost_per_enrollee: 300
+      cost_per_enrollee: 400
       fixed_cost_per_hospital: 25000
       cost_per_readmission: 19000
+      payment_to_cost: 0.892
+      variable_cost_share: 0.80
       hospital_share_of_savings: 0.0
-      lost_margin_per_readmission: 1750
-      ma_share: 0.50
+      beds_refilled: false
+      persistence: 0.5
+      ma_share: 0.41
       pass_through_mode: volume
-  pilot_hospitals_top_n: 2      # pilot at the client hospitals with the largest estimated penalty
+  pilot_hospitals_top_n: 2      # pilot where the targeted program's hospital net is highest (addressable penalty)
   # low / base / high for the Monte Carlo (triangular) and the scenario table
   ranges:
     relative_reduction: [0.03, 0.10, 0.20]
-    cost_per_enrollee: [200, 300, 600]
+    cost_per_enrollee: [250, 400, 700]
     risk_multiplier: [1.2, 1.5, 1.8]
-    ma_share: [0.35, 0.50, 0.65]
-    payment_scale: [0.85, 1.0, 1.25]
+    persistence: [0.3, 0.5, 0.8]
+    ma_share: [0.30, 0.41, 0.55]
+    payment_scale: [0.85, 1.0, 1.2]
+    variable_cost_share: [0.60, 0.80, 0.90]
     fixed_cost_per_hospital: [10000, 25000, 60000]
 
 # Published CMS figures used as "known numbers" in the sanity checks (docs/assumptions.md has sources).

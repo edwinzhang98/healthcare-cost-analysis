@@ -63,13 +63,36 @@ pio.templates["hrrp"] = go.layout.Template(layout=go.Layout(
 pio.templates.default = "hrrp"
 
 
+def _wrap(text: str, width: int) -> tuple[str, int]:
+    """Insert <br> so long titles wrap instead of being cut off; returns (text, n_lines)."""
+    words, lines, cur = text.split(" "), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    lines.append(cur)
+    return "<br>".join(lines), len(lines)
+
+
+def _has_legend(fig: go.Figure) -> bool:
+    named = [t for t in fig.data if t.name and t.showlegend is not False and t.type not in ("heatmap", "contour")]
+    return len(named) >= 2 and fig.layout.legend.y in (None, 1.0, 1.02)
+
+
 def _title(fig: go.Figure, title: str, subtitle: str | None = None, height: int | None = None) -> go.Figure:
-    t = dict(text=f"<b>{title}</b>")
+    ttxt, tl = _wrap(title, 78)
+    t = dict(text=f"<b>{ttxt}</b>")
+    sl = 0
     if subtitle:
-        t["subtitle"] = dict(text=subtitle, font=dict(size=12, color=INK_2))
+        stxt, sl = _wrap(subtitle, 118)
+        t["subtitle"] = dict(text=stxt, font=dict(size=12, color=INK_2))
     fig.update_layout(title=t)
+    top = 36 + 22 * tl + 17 * sl + (30 if _has_legend(fig) else 8)
+    fig.update_layout(margin=dict(t=max(top, fig.layout.margin.t or 0) if fig.layout.margin.t and fig.layout.margin.t > 100 else top))
     if height:
-        fig.update_layout(height=height)
+        fig.update_layout(height=height + max(0, top - 88))
     return fig
 
 
@@ -128,10 +151,12 @@ def reporting_status(fct: pd.DataFrame, title: str, subtitle: str) -> go.Figure:
             orientation="h", marker=dict(color=STATUS_COLORS[status], line=dict(color=SURFACE, width=2)),
             customdata=s["n"].fillna(0), width=0.55,
             hovertemplate=f"%{{y}}<br>{label}: %{{x:.0%}} (%{{customdata:,.0f}} hospitals)<extra></extra>"))
-    fig.update_layout(barmode="stack", barcornerradius=0, legend=dict(y=1.02))
+    fig.update_layout(barmode="stack", barcornerradius=0, legend=dict(orientation="h", y=-0.22, yanchor="top",
+                                                                      traceorder="normal"),
+                      margin=dict(b=110))
     fig.update_xaxes(tickformat=".0%", title_text="Share of hospitals in the HRRP file", range=[0, 1])
     fig.update_yaxes(showgrid=False)
-    return _title(fig, title, subtitle, height=400)
+    return _title(fig, title, subtitle, height=460)
 
 
 def err_distribution(fct: pd.DataFrame, title: str, subtitle: str) -> go.Figure:
@@ -368,7 +393,7 @@ def penalty_by_hospital(cond: pd.DataFrame, names: dict[str, str], title: str, s
     fig.add_trace(go.Scatter(y=ylab, x=tot.values, mode="text", text=[money(v) for v in tot.values],
                              textposition="middle right", showlegend=False, hoverinfo="skip",
                              textfont=dict(color=INK, size=12)))
-    fig.update_layout(barmode="stack", barcornerradius=0)
+    fig.update_layout(barmode="stack", barcornerradius=0, legend=dict(traceorder="normal"))
     fig.update_xaxes(title_text="Estimated penalty per year (US$)", tickprefix="$", tickformat="~s",
                      range=[0, tot.max() * 1.22 if tot.max() > 0 else 1])
     fig.update_yaxes(showgrid=False)
@@ -400,11 +425,11 @@ def threshold_heatmap(rows: pd.DataFrame, names: dict[str, str], title: str, sub
 
 # ----------------------------------------------------------------- business case
 def waterfall(t: dict, share: float, title: str, subtitle: str) -> go.Figure:
-    captured = share * t["readmission_savings"]
     steps = [("Avoided HRRP penalty", t["avoided_penalty"]),
-             ("Readmission savings kept by hospital", captured),
+             ("Payer savings shared back", t.get("savings_shared_with_hospital", 0.0)),
+             ("Lost fee-for-service margin", -t.get("lost_margin", 0.0)),
              ("Program cost", -t["program_cost"])]
-    net = t["avoided_penalty"] + captured - t["program_cost"]
+    net = sum(v for _, v in steps)
     fig = go.Figure(go.Waterfall(
         orientation="v", measure=["relative"] * len(steps) + ["total"],
         x=[s[0] for s in steps] + ["Net per year (hospital)"],
@@ -423,12 +448,15 @@ def phase_in_chart(df: pd.DataFrame, share: float, title: str, subtitle: str) ->
     fig = go.Figure()
     fig.add_trace(go.Bar(x=fy, y=df["avoided_penalty"], name="Avoided penalty", marker_color=BLUE,
                          hovertemplate="%{x}<br>Avoided penalty: $%{y:,.0f}<extra></extra>"))
-    if share > 0:
-        fig.add_trace(go.Bar(x=fy, y=share * df["readmission_savings"], name="Readmission savings kept",
+    if df.get("savings_shared_with_hospital", pd.Series([0])).sum() > 0:
+        fig.add_trace(go.Bar(x=fy, y=df["savings_shared_with_hospital"], name="Payer savings shared back",
                              marker_color=AQUA,
-                             hovertemplate="%{x}<br>Readmission savings kept: $%{y:,.0f}<extra></extra>"))
+                             hovertemplate="%{x}<br>Payer savings shared back: $%{y:,.0f}<extra></extra>"))
     fig.add_trace(go.Bar(x=fy, y=-df["program_cost"], name="Program cost", marker_color=RED,
                          hovertemplate="%{x}<br>Program cost: $%{y:,.0f}<extra></extra>"))
+    if df.get("lost_margin", pd.Series([0])).sum() > 0:
+        fig.add_trace(go.Bar(x=fy, y=-df["lost_margin"], name="Lost fee-for-service margin", marker_color=ORANGE,
+                             hovertemplate="%{x}<br>Lost margin: $%{y:,.0f}<extra></extra>"))
     fig.add_trace(go.Scatter(x=fy, y=df["hospital_net_cum"], name="Cumulative net (hospital)", mode="lines+markers",
                              line=dict(color=INK, width=2), marker=dict(size=8, color=INK, line=dict(color=SURFACE, width=2)),
                              hovertemplate="%{x}<br>Cumulative net: $%{y:,.0f}<extra></extra>"))
@@ -493,3 +521,36 @@ def monte_carlo_hist(mc: pd.DataFrame, col: str, title: str, subtitle: str) -> g
     fig.update_yaxes(title_text="Simulation runs")
     fig.update_layout(bargap=0.02)
     return _title(fig, title, subtitle, height=380)
+
+
+def validation_scatter(v: pd.DataFrame, title: str, subtitle: str) -> go.Figure:
+    """Our estimated payment cut vs CMS's actual FY2026 cut, one dot per hospital."""
+    d = v.copy()
+    lim = float(max(d["payment_reduction_pct"].max(), d["cms_reduction_pct"].max())) * 1.05
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0, lim], y=[0, lim], mode="lines", line=dict(color=NEUTRAL, width=1),
+                             hoverinfo="skip", showlegend=False))
+    fig.add_trace(go.Scatter(
+        x=d["payment_reduction_pct"], y=d["cms_reduction_pct"], mode="markers", showlegend=False,
+        marker=dict(size=6, color="rgba(42,120,214,0.45)", line=dict(width=0)),
+        hovertemplate="Our estimate %{x:.2%}<br>CMS actual %{y:.2%}<extra></extra>"))
+    fig.update_xaxes(title_text="Our estimated payment cut (from Care Compare files only)", tickformat=".1%",
+                     range=[0, lim])
+    fig.update_yaxes(title_text="CMS actual FY2026 payment cut (Table 15)", tickformat=".1%", range=[0, lim])
+    return _title(fig, title, subtitle, height=440)
+
+
+def persistence_scatter(d: pd.DataFrame, slope: float, title: str, subtitle: str) -> go.Figure:
+    """CMS actual payment cut FY2026 vs FY2027, one dot per hospital."""
+    lim = float(max(d["cut_fy2026"].max(), d["cut_fy2027"].max())) * 1.03
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=[0, lim], y=[0, lim], mode="lines", line=dict(color=NEUTRAL, width=1),
+                             name="Same cut both years", hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=[0, lim], y=[0, slope * lim], mode="lines", line=dict(color=RED, width=2),
+                             name=f"Average relationship (slope {slope:.2f})", hoverinfo="skip"))
+    fig.add_trace(go.Scatter(x=d["cut_fy2026"], y=d["cut_fy2027"], mode="markers", name="Hospital",
+                             marker=dict(size=5, color="rgba(42,120,214,0.35)", line=dict(width=0)),
+                             hovertemplate="FY2026 cut %{x:.2%}<br>FY2027 cut %{y:.2%}<extra></extra>"))
+    fig.update_xaxes(title_text="CMS actual payment cut, FY2026", tickformat=".1%", range=[0, lim])
+    fig.update_yaxes(title_text="CMS actual payment cut, FY2027", tickformat=".1%", range=[0, lim])
+    return _title(fig, title, subtitle, height=440)

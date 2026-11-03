@@ -4,7 +4,8 @@
 -- Purpose : "Where do excess readmissions and penalties concentrate?" One long
 --           table of segment statistics (by condition, region, state,
 --           ownership, size, star rating, spending band, emergency services),
---           used by the National Picture page and the report.
+--           used by the National Picture page and the report. "Volume" = HRRP
+--           volume band (Medicare fee-for-service eligible discharges).
 --           Universe: payment-eligible hospitals (excludes Maryland and
 --           hospitals no longer listed by CMS).
 --           mean_err_ci_* is a normal-approximation 95% interval for the
@@ -25,14 +26,14 @@ WITH seg AS (
             census_region                       AS "Census region",
             state                               AS "State",
             ownership_group                     AS "Ownership",
-            size_band                           AS "Size",
+            size_band                           AS "Volume",
             star_rating_label                   AS "Star rating",
             mspb_band                           AS "Spending (MSPB)",
             emergency_services_label            AS "Emergency services"
         FROM dim_hospital
         WHERE is_payment_eligible
     )
-    ON "National", "Census region", "State", "Ownership", "Size", "Star rating",
+    ON "National", "Census region", "State", "Ownership", "Volume", "Star rating",
        "Spending (MSPB)", "Emergency services"
     INTO NAME segment_dimension VALUE segment_value
 ),

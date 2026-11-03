@@ -65,10 +65,17 @@ def model_inputs(facility_ids=None) -> cm.ModelInputs:
 
 
 def pilot_hospitals(n: int | None = None) -> list[str]:
+    """Client hospitals where each program dollar returns the most to the hospital (benefit-cost ratio),
+    i.e. ranked on the penalty a heart failure / pneumonia program can actually address, not on total
+    penalty (ranking on last year's total penalty picks hospitals at their peak: winner's curse)."""
     n = n or load_config()["intervention"]["pilot_hospitals_top_n"]
-    ph = data.table("mart_penalty_hospital")
-    ph = ph[ph["facility_id"].isin(client.client_ids())].sort_values("penalty_est_annual", ascending=False)
-    return ph["facility_id"].head(n).tolist()
+    m = model_inputs(client.client_ids())
+    p = program_params("targeted")
+    bcr = {}
+    for fid in client.client_ids():
+        t = cm.evaluate(m.subset([fid]), p)["totals"]
+        bcr[fid] = t["benefit_cost_ratio"] if t["program_cost"] > 0 else -1.0
+    return sorted(bcr, key=bcr.get, reverse=True)[:n]
 
 
 def phase_in(m: cm.ModelInputs, p: cm.ProgramParams) -> pd.DataFrame:
@@ -98,6 +105,18 @@ def sensitivity_table(m: cm.ModelInputs, p: cm.ProgramParams, pct: float = 0.30)
                 "combined_sign_flips": bool(np.sign(t["combined_net"]) != np.sign(base["combined_net"])),
             })
     return pd.DataFrame(rows)
+
+
+def client_peer_grid(hc: pd.DataFrame, dim: pd.DataFrame, ph: pd.DataFrame) -> list[dict]:
+    """Each client hospital's percentile among its peers (same ownership and HRRP volume), by condition."""
+    out = []
+    for f in client.client_ids():
+        b = benchmarking.benchmark(hc, dim, f).set_index("condition_code")["percentile_vs_peers"]
+        s_ = benchmarking.peer_summary(dim, ph, f)
+        out.append({"facility_id": f, "name": dim.set_index("facility_id").loc[f, "facility_name"],
+                    "index": _r(s_["target_index"]), "index_percentile": _r(s_["index_percentile"], 1),
+                    "n_peers": s_["n_peers"], **{c: _r(b.get(c), 1) for c in ["HF", "PN", "COPD", "AMI", "CABG", "HIP_KNEE"]}})
+    return out
 
 
 def years_to_payback(df: pd.DataFrame, col: str = "hospital_net_cum") -> str:
@@ -197,8 +216,12 @@ def build() -> dict:
         ("broad_all", f"{preset_label('broad')} — all 8 hospitals", m_client, p_broad),
         ("targeted_all", f"{preset_label('targeted')} — all 8 hospitals", m_client, p_tgt),
         ("targeted_pilot", f"{preset_label('targeted')} — pilot at top-{len(pilot)} hospitals", m_pilot, p_tgt),
-        ("targeted_pilot_risk30", "Pilot + hospital keeps 30% of readmission savings (risk contracts)", m_pilot,
+        ("targeted_pilot_risk30", "Pilot + 30% of payer savings shared back (shared-savings contract)", m_pilot,
          replace(p_tgt, hospital_share_of_savings=0.30)),
+        ("targeted_pilot_no_rtm", "Pilot if today's penalty simply continued (no regression to the mean)", m_pilot,
+         replace(p_tgt, persistence=1.0)),
+        ("targeted_pilot_beds_refilled", "Pilot if freed beds are refilled (no lost margin)", m_pilot,
+         replace(p_tgt, beds_refilled=True)),
         ("broad_fy2026_rules", "Broad program under FY2026 rules (no MA in score, 3-year window)", m_client,
          replace(p_broad, ma_share=0.0, window_years=3.0)),
     ]
@@ -243,7 +266,8 @@ def build() -> dict:
     # national: where would each design pay back on the hospital P&L?
     m_all = model_inputs(dim.loc[dim["is_payment_eligible"], "facility_id"])
     nat = {}
-    for key, p in (("broad", p_broad), ("targeted", p_tgt)):
+    nma = cfg["intervention"]["national_ma_share"]
+    for key, p in (("broad", replace(p_broad, ma_share=nma)), ("targeted", replace(p_tgt, ma_share=nma))):
         hh = cm.evaluate(m_all, p)["hospitals"]
         run = hh[hh["program_runs"]]
         nat[key] = {"hospitals_running": int(len(run)), "hospitals_positive": int((run["hospital_net"] > 0).sum()),
@@ -356,6 +380,9 @@ def build() -> dict:
             "penalty_by_condition": client_pen.groupby("condition_code")["penalty_contribution_annual"].sum().round(0).to_dict(),
             "top2_share": _r(client_h["penalty_est_annual"].head(2).sum() / client_h["penalty_est_annual"].sum()),
             "pilot_hospitals": pilot, "pilot_hospital_names": [names[x] for x in pilot],
+            "target_penalty_by_condition": client_pen[client_pen["facility_id"] == target]
+                .set_index("condition_code")["penalty_contribution_annual"].round(0).to_dict(),
+            "peer_percentiles": client_peer_grid(hc, dim, ph),
             "benchmark_target": {c: {"err": _r(r.target_err), "peer_median": _r(r.peer_median), "percentile": _r(r.percentile_vs_peers, 1),
                                      "n_peers": int(r.n_peers), "status": r.status,
                                      "readmissions_vs_peer_median": _r(r.readmissions_vs_peer_median, 1)}
@@ -382,9 +409,48 @@ def build() -> dict:
         },
         "known_numbers": cfg["known_numbers"],
     }
+    metrics["validation"] = validation_metrics()
     METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
     METRICS_PATH.write_text(json.dumps(metrics, indent=2, default=lambda o: _r(o) if not isinstance(o, (list, dict)) else o))
     return metrics
+
+
+def validation_metrics() -> dict | None:
+    """Summary of the optional CMS check (reports/tables/cms_validation_*.csv), if it has been run."""
+    tdir = ROOT / "reports" / "tables"
+    path = tdir / "cms_validation_summary.csv"
+    if not path.exists():
+        return None
+    v = pd.read_csv(path).set_index("metric")
+    imp = pd.read_csv(tdir / "cms_validation_imputation.csv").set_index("condition_code")
+    peers = pd.read_csv(tdir / "cms_validation_peer_groups.csv")
+    cl = pd.read_csv(tdir / "cms_validation_client.csv", dtype={"facility_id": str})
+    pers_path = tdir / "cms_validation_persistence.csv"
+    pers = pd.read_csv(pers_path).set_index("metric")["value"].to_dict() if pers_path.exists() else {}
+    pw_path = tdir / "cms_payment_weights.csv"
+    pw = pd.read_csv(pw_path).round(3).to_dict(orient="records") if pw_path.exists() else []
+    return {
+        "persistence": {k: _r(v, 4) for k, v in pers.items()},
+        "payment_weights": pw,
+        "agreement": _r(v.loc["classification_agreement", "ours"]),
+        "confusion": v.loc["classification_agreement", "note"],
+        "hospitals_compared": int(v.loc["hospitals_in_both_files", "ours"]),
+        "ours_penalized": int(v.loc["hospitals_penalized", "ours"]),
+        "cms_penalized": int(v.loc["hospitals_penalized", "cms"]),
+        "r_pearson": _r(v.loc["reduction_pct_correlation_pearson", "ours"], 3),
+        "r_spearman": _r(v.loc["reduction_pct_correlation_spearman", "ours"], 3),
+        "mean_reduction_ours": _r(v.loc["mean_reduction_pct_among_penalized", "ours"], 5),
+        "mean_reduction_cms": _r(v.loc["mean_reduction_pct_among_penalized", "cms"], 5),
+        "median_reduction_ours": _r(v.loc["median_reduction_pct_among_penalized", "ours"], 5),
+        "median_reduction_cms": _r(v.loc["median_reduction_pct_among_penalized", "cms"], 5),
+        "at_cap_ours": int(v.loc["hospitals_at_3pct_cap", "ours"]), "at_cap_cms": int(v.loc["hospitals_at_3pct_cap", "cms"]),
+        "condition_flag_agreement": _r(v.loc["condition_flag_agreement", "ours"]),
+        "err_max_abs_difference": _r(v.loc["err_max_abs_difference", "ours"], 6),
+        "imputation_mid_vs_actual": {c: _r(r.mid_vs_actual, 3) for c, r in imp.iterrows()},
+        "imputation_within_bounds": _r(imp.loc["ALL", "share_within_bounds"], 3),
+        "peer_groups": peers.round(4).to_dict(orient="records"),
+        "client": cl.round(5).to_dict(orient="records"),
+    }
 
 
 def load_metrics() -> dict:

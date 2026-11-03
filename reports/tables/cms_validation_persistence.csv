@@ -1,0 +1,9 @@
+metric,value
+hospitals_in_both_years,2894.0
+correlation_fy2026_fy2027,0.5730236363252688
+slope_fy2027_on_fy2026,0.5779946100329292
+top_decile_mean_cut_fy2026,0.013834680134680135
+top_decile_mean_cut_fy2027,0.009614478114478115
+top_decile_share_losing_half,0.40404040404040403
+share_penalized_fy2026,0.7878369039391845
+share_penalized_both_years,0.7045611610228059

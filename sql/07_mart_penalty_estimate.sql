@@ -13,7 +13,8 @@
 --
 --   condition payments (per year) = estimated eligible discharges per year x
 --   average base operating DRG payment per discharge for that condition
---   (seed_condition_params). Total payments are not in the CMS files; they are
+--   (seed_condition_params: FY2026 heart-failure base payment x CMS's published
+--   relative payment per case by condition). Total payments are not in the CMS files; they are
 --   approximated as HRRP-condition payments / hrrp_payment_share, and are used
 --   only to apply the 3% cap and to express the penalty as a percentage.
 --

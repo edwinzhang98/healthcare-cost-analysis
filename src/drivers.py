@@ -14,15 +14,15 @@ import statsmodels.formula.api as smf
 
 REFERENCE_LEVELS = {
     "ownership_group": "Non-profit",
-    "size_band": "Medium",
+    "size_band": "Mid volume",
     "census_region": "Midwest",
 }
 
 TERM_LABELS = {
     "C(ownership_group, Treatment('Non-profit'))[T.For-profit]": ("Ownership", "For-profit vs non-profit"),
     "C(ownership_group, Treatment('Non-profit'))[T.Government]": ("Ownership", "Government vs non-profit"),
-    "C(size_band, Treatment('Medium'))[T.Large]": ("Size", "Large vs medium"),
-    "C(size_band, Treatment('Medium'))[T.Small]": ("Size", "Small vs medium"),
+    "C(size_band, Treatment('Mid volume'))[T.High volume]": ("Volume", "High vs mid HRRP volume"),
+    "C(size_band, Treatment('Mid volume'))[T.Low volume]": ("Volume", "Low vs mid HRRP volume"),
     "C(census_region, Treatment('Midwest'))[T.Northeast]": ("Region", "Northeast vs Midwest"),
     "C(census_region, Treatment('Midwest'))[T.South]": ("Region", "South vs Midwest"),
     "C(census_region, Treatment('Midwest'))[T.West]": ("Region", "West vs Midwest"),
@@ -45,7 +45,7 @@ def adjusted_associations(hc: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     to six rows)."""
     d = regression_frame(hc)
     formula = ("err_points ~ C(condition_code) + C(ownership_group, Treatment('Non-profit'))"
-               " + C(size_band, Treatment('Medium')) + C(census_region, Treatment('Midwest'))"
+               " + C(size_band, Treatment('Mid volume')) + C(census_region, Treatment('Midwest'))"
                " + no_emergency_dept + mspb_per_005")
     fit = smf.ols(formula, data=d).fit(cov_type="cluster", cov_kwds={"groups": d["facility_id"]})
     ci = fit.conf_int()

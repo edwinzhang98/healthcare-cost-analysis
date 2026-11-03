@@ -189,6 +189,37 @@ def run() -> dict | None:
     cg.rename(columns={"payment_reduction_pct": "our_estimated_reduction_fy2026"}).drop(
         columns=["cms_paf_fy2026", "cms_paf_fy2027"]).to_csv(TABLES_DIR / "cms_validation_client.csv", index=False)
 
+    # ---- persistence: how much of a hospital's FY2026 cut is still there in FY2027 (CMS actuals)
+    pers = t26.merge(t27, on="facility_id", how="inner")
+    pers["cut_fy2026"], pers["cut_fy2027"] = 1 - pers["cms_paf_fy2026"], 1 - pers["cms_paf_fy2027"]
+    slope = float(np.polyfit(pers["cut_fy2026"], pers["cut_fy2027"], 1)[0])
+    top = pers[pers["cut_fy2026"] >= pers["cut_fy2026"].quantile(0.9)]
+    pd.DataFrame([
+        ("hospitals_in_both_years", len(pers)),
+        ("correlation_fy2026_fy2027", float(pers[["cut_fy2026", "cut_fy2027"]].corr().iloc[0, 1])),
+        ("slope_fy2027_on_fy2026", slope),
+        ("top_decile_mean_cut_fy2026", float(top["cut_fy2026"].mean())),
+        ("top_decile_mean_cut_fy2027", float(top["cut_fy2027"].mean())),
+        ("top_decile_share_losing_half", float((top["cut_fy2027"] < 0.5 * top["cut_fy2026"]).mean())),
+        ("share_penalized_fy2026", float((pers["cut_fy2026"] > 0).mean())),
+        ("share_penalized_both_years", float(((pers["cut_fy2026"] > 0) & (pers["cut_fy2027"] > 0)).mean())),
+    ], columns=["metric", "value"]).to_csv(TABLES_DIR / "cms_validation_persistence.csv", index=False)
+    data.save_table(pers[["facility_id", "cut_fy2026", "cut_fy2027"]], "cms_persistence_hospital")
+
+    # ---- relative payment per case by condition implied by CMS's DRG payment ratios
+    #      (median within-hospital ratio vs heart failure; documents the seed values)
+    L = long[(long["cms_discharges"] >= 25) & (long["cms_drg_ratio"] > 0)].copy()
+    L["pay_idx"] = L["cms_drg_ratio"] / L["cms_discharges"]
+    piv = L.pivot_table(index="facility_id", columns="condition_code", values="pay_idx")
+    rel = piv.div(piv["HF"], axis=0)
+    seed = data.condition_params()
+    pd.DataFrame({
+        "cms_median_rel_to_hf": rel.median(), "cms_p25": rel.quantile(0.25), "cms_p75": rel.quantile(0.75),
+        "hospitals": rel.notna().sum(),
+        "seed_rel_to_hf": seed["base_payment_per_discharge"] / seed.loc["HF", "base_payment_per_discharge"],
+        "drg_only_rel_to_hf": seed["drg_only_payment"] / seed.loc["HF", "drg_only_payment"],
+    }).round(3).reset_index().to_csv(TABLES_DIR / "cms_payment_weights.csv", index=False)
+
     # ---- hospital-level frame for charts (not committed)
     out = h[["facility_id", "is_penalized", "payment_reduction_pct", "cms_penalized", "cms_reduction_pct",
              "cms_peer_group", "cms_dual_proportion"]]
