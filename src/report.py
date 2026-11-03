@@ -269,6 +269,18 @@ def build() -> None:
     ]
     tables["assumptions"] = _table(pd.DataFrame(assumptions, columns=["Assumption", "Base case and source"]))
 
+    scn = bc["scenarios"]
+    opts = pd.DataFrame([
+        {"option": "Broad program, all 8 hospitals", **scn["broad_all"]},
+        {"option": "Targeted program, all 8 hospitals", **scn["targeted_all"]},
+        {"option": "Pilot at the 2 best-placed hospitals", **scn["targeted_pilot"]},
+        {"option": "Pilot + 30% of payer savings shared back", **scn["targeted_pilot_risk30"]},
+    ])
+    figs["options"] = _fig(charts.options_chart(
+        opts, "Only the pilot with payer co-funding breaks even for the hospital",
+        "Net value per year once the program is fully counted (FY2031+), base-case assumptions; blue = hospital P&L, "
+        "aqua = patients, payers and hospital together"))
+
     recs = recommendations.build(m)
     finds = recommendations.findings(m)
     tpl = Template(TEMPLATE)
@@ -424,6 +436,7 @@ between Medicare and the hospital, so they cancel out.</p>
 <div class="chart">{{ figs.mc }}</div>
 
 <h2 id="recs">8. Recommendations</h2>
+<div class="chart">{{ figs.options }}</div>
 {% for r in recs %}<div class="rec"><div class="t">{{ loop.index }}. {{ md(r.what) }}</div><div class="g">
 <div><strong>Owner:</strong> {{ md(r.who) }}</div><div><strong>Expected impact:</strong> {{ md(r.impact) }}</div>
 <div><strong>How we measure it:</strong> {{ md(r.measure) }}</div><div><strong>Risk:</strong> {{ md(r.risk) }}</div></div></div>{% endfor %}

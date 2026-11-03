@@ -555,3 +555,24 @@ def persistence_scatter(d: pd.DataFrame, slope: float, title: str, subtitle: str
     fig.update_xaxes(title_text="CMS actual payment cut, FY2026", tickformat=".1%", range=[0, lim])
     fig.update_yaxes(title_text="CMS actual payment cut, FY2027", tickformat=".1%", range=[0, lim])
     return _title(fig, title, subtitle, height=440)
+
+
+def options_chart(scen: pd.DataFrame, title: str, subtitle: str) -> go.Figure:
+    """Hospital net vs whole-system net per year for each program option (steady state)."""
+    d = scen.iloc[::-1]
+    fig = go.Figure()
+    fig.add_trace(go.Bar(y=d["option"], x=d["hospital_net"], name="Hospital net per year", orientation="h",
+                         marker_color=BLUE, text=[money(v) for v in d["hospital_net"]], textposition="outside",
+                         cliponaxis=False, hovertemplate="%{y}<br>Hospital net: $%{x:,.0f}<extra></extra>"))
+    fig.add_trace(go.Bar(y=d["option"], x=d["combined_net"], name="Whole-system net per year", orientation="h",
+                         marker_color=AQUA, text=[money(v) for v in d["combined_net"]], textposition="outside",
+                         cliponaxis=False, hovertemplate="%{y}<br>Whole-system net: $%{x:,.0f}<extra></extra>"))
+    fig.add_vline(x=0, line=dict(color=INK_2, width=1))
+    lo = float(min(d["hospital_net"].min(), d["combined_net"].min(), 0))
+    hi = float(max(d["hospital_net"].max(), d["combined_net"].max(), 0))
+    pad = 0.25 * (hi - lo)
+    fig.update_layout(barmode="group", bargap=0.3, bargroupgap=0.1, legend=dict(traceorder="normal"))
+    fig.update_xaxes(title_text="US$ per year at steady state (positive = pays for itself)", tickprefix="$",
+                     tickformat="~s", range=[lo - pad, hi + pad])
+    fig.update_yaxes(showgrid=False)
+    return _title(fig, title, subtitle, height=max(340, 120 + 70 * len(d)))

@@ -888,7 +888,7 @@
         "cum_combined_net_6y": -2616803.84
       },
       "targeted_all": {
-        "label": "Targeted pilot (heart failure + pneumonia, higher-risk patients) \u2014 all 8 hospitals",
+        "label": "Targeted program (heart failure + pneumonia, higher-risk patients) \u2014 all 8 hospitals",
         "enrollees": 687.46,
         "program_cost": 474983.05,
         "penalty_today": 1231070.71,
@@ -911,7 +911,7 @@
         "cum_combined_net_6y": -908608.16
       },
       "targeted_pilot": {
-        "label": "Targeted pilot (heart failure + pneumonia, higher-risk patients) \u2014 pilot at top-2 hospitals",
+        "label": "Targeted program (heart failure + pneumonia, higher-risk patients) \u2014 pilot at top-2 hospitals",
         "enrollees": 200.85,
         "program_cost": 130338.98,
         "penalty_today": 484835.74,

@@ -1,13 +1,27 @@
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import md, esc, how_to_read, metrics, money, page, pct
+import pandas as pd
+
+from dashboard.common import md, esc, chart, charts, how_to_read, metrics, money, page, pct
 from src import recommendations
 
 m = metrics()
 page("Recommendations",
      "What should the group do, who owns each step, what impact should we expect, how will we measure it, and what "
      "could go wrong?")
+
+sc = m["business_case"]["scenarios"]
+opts = pd.DataFrame([
+    {"option": "Broad program, all 8 hospitals", **sc["broad_all"]},
+    {"option": "Targeted program, all 8 hospitals", **sc["targeted_all"]},
+    {"option": "Pilot at the 2 best-placed hospitals", **sc["targeted_pilot"]},
+    {"option": "Pilot + 30% of payer savings shared back", **sc["targeted_pilot_risk30"]},
+])
+chart(charts.options_chart(
+    opts, "Only the pilot with payer co-funding breaks even for the hospital",
+    "Net value per year once the program is fully counted (FY2031+), base-case assumptions; blue = hospital P&L, "
+    "aqua = patients, payers and hospital together"), key="opts")
 
 recs = recommendations.build(m)
 for i, r in enumerate(recs, 1):
@@ -63,8 +77,12 @@ md(
 
 how_to_read(
     """
-Each card is one recommendation in a standard format: **what** to do, **who** owns it, the **expected impact** in
-numbers from this analysis, **how** we will measure it, and the main **risk**. The numbers come from the same model as
-pages 5 and 6 (base-case assumptions), so they update when the analysis is rerun.
+- **Chart:** each pair of bars is one way to run the program. Blue is what the hospital's books see each year once the
+  program is fully counted; aqua is the value to patients, payers and the hospital together. Bars to the left of the
+  line lose money. The broad program loses money in both views; the pilot is close to break-even and turns positive
+  for the hospital only if payers share part of their savings.
+- **Cards:** each card is one recommendation in a standard format: **what** to do, **who** owns it, the **expected
+  impact** in numbers from this analysis, **how** we will measure it, and the main **risk**. The numbers come from the
+  same model as pages 5 and 6 (base-case assumptions), so they update when the analysis is rerun.
 """
 )

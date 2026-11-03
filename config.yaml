@@ -82,7 +82,7 @@ intervention:
       ma_share: 0.41
       pass_through_mode: volume
     targeted:                   # recommended pilot design
-      label: Targeted pilot (heart failure + pneumonia, higher-risk patients)
+      label: Targeted program (heart failure + pneumonia, higher-risk patients)
       target_conditions: [HF, PN]
       targeting: above_threshold
       reach: 0.30
