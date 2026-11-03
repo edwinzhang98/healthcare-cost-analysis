@@ -6,11 +6,12 @@ threshold, payment level, discharge imputation, or lower ERRs after an
 intervention). ``src.quality`` checks that both give the same base-case answer.
 
 HRRP formula (FY2019 onward, simplified to what our data supports):
-    reduction % = sum_c (payments_c / total payments) * max(ERR_c - threshold_c, 0)
-                  (only conditions with 25+ eligible discharges, i.e. with an ERR)
+    reduction % = NM * sum_c (payments_c / total payments) * max(ERR_c - threshold_c, 0)
+                  (only conditions with 25+ eligible discharges, i.e. with an ERR;
+                   NM = neutrality modifier, 0.9627 for FY2026)
     adjustment factor = 1 - min(reduction %, 3%)
     penalty $ (per year) = reduction % * total base operating payments
-                         = sum_c payments_c * max(ERR_c - threshold_c, 0)   (below the cap)
+                         = NM * sum_c payments_c * max(ERR_c - threshold_c, 0)   (below the cap)
 """
 from __future__ import annotations
 
@@ -23,7 +24,8 @@ import pandas as pd
 @dataclass(frozen=True)
 class PenaltyParams:
     penalty_cap_pct: float = 0.03
-    hrrp_payment_share: float = 0.10
+    hrrp_payment_share: float = 0.133
+    neutrality_modifier: float = 0.9627
     threshold_method: str = "national_median"   # "national_median" | "one"
     payment_scale: float = 1.0                   # multiplies every condition's payment
     discharges_case: str = "base"                # "base" | "low" | "high" imputation
@@ -70,7 +72,8 @@ def estimate(
     elig = has & df["is_payment_eligible"].fillna(False).astype(bool)
     df["condition_payments"] = np.where(has, df["discharges_annual"] * df["payment_per_discharge"], 0.0)
     df["excess_ratio"] = np.where(has, np.maximum(df["err"] - df["threshold"], 0.0), 0.0)
-    df["penalty_uncapped"] = np.where(elig, df["condition_payments"] * df["excess_ratio"], 0.0)
+    df["penalty_uncapped"] = np.where(elig, params.neutrality_modifier * df["condition_payments"]
+                                      * df["excess_ratio"], 0.0)
 
     hosp = df.groupby("facility_id", as_index=False).agg(
         is_payment_eligible=("is_payment_eligible", "max"),

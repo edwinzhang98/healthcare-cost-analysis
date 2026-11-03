@@ -1,0 +1,1019 @@
+{
+  "data": {
+    "hrrp_rows": 18330,
+    "hrrp_hospitals": 3055,
+    "matched_hospital_info": 3035,
+    "unmatched": 20,
+    "maryland_hospitals": 43,
+    "payment_eligible_hospitals": 2992,
+    "eligible_with_err": 2777,
+    "hospital_condition_rows_with_err": 11720,
+    "suppressed_count_rows": 3683,
+    "imputed_share_of_discharges": 0.0972,
+    "imputed_share_hip_knee": 0.5461,
+    "dq_checks": {
+      "PASS": 30,
+      "WARN": 7
+    }
+  },
+  "national": {
+    "hospitals_penalized": 2336,
+    "share_penalized_of_scored": 0.8412,
+    "total_penalty": 278855319.0,
+    "mean_penalty_penalized": 119373.0,
+    "median_penalty_penalized": 51121.0,
+    "median_reduction_pct_penalized": 0.00348,
+    "mean_reduction_pct_penalized": 0.0047,
+    "hospitals_at_cap": 12,
+    "top10_share_of_penalty": 0.5489,
+    "top20_share_of_penalty": 0.7498,
+    "excess_readmissions_per_year": 4159.0,
+    "eligible_discharges_per_year": 840960.0,
+    "mean_err": 1.0019,
+    "conditions": {
+      "AMI": {
+        "penalty": 24691327.1552,
+        "excess_above_threshold": 383.5527,
+        "expected_rate_pct": 13.243,
+        "penalty_per_excess_readmission": 64375.3222,
+        "share_discharges": 0.114,
+        "share_excess_readmissions": 0.0913,
+        "share_penalty": 0.0885,
+        "n_hospitals": 1700.0,
+        "mean_err": 1.0018,
+        "share_above_threshold": 0.4994,
+        "discharges_annual": 95867.3333,
+        "excess_readmissions_annual_pos": 379.7855,
+        "payment_per_discharge": 9027.0,
+        "penalty_per_excess_vs_readmission_cost": 3.3882
+      },
+      "CABG": {
+        "penalty": 46620015.3861,
+        "excess_above_threshold": 135.0061,
+        "expected_rate_pct": 10.5458,
+        "penalty_per_excess_readmission": 345317.8224,
+        "share_discharges": 0.0375,
+        "share_excess_readmissions": 0.0328,
+        "share_penalty": 0.1672,
+        "n_hospitals": 866.0,
+        "mean_err": 1.0024,
+        "share_above_threshold": 0.5,
+        "discharges_annual": 31554.3333,
+        "excess_readmissions_annual_pos": 136.3486,
+        "payment_per_discharge": 38353.0,
+        "penalty_per_excess_vs_readmission_cost": 18.1746
+      },
+      "COPD": {
+        "penalty": 13798844.4089,
+        "excess_above_threshold": 381.9815,
+        "expected_rate_pct": 17.9369,
+        "penalty_per_excess_readmission": 36124.3802,
+        "share_discharges": 0.0985,
+        "share_excess_readmissions": 0.086,
+        "share_penalty": 0.0495,
+        "n_hospitals": 2277.0,
+        "mean_err": 1.0013,
+        "share_above_threshold": 0.4998,
+        "discharges_annual": 82794.6667,
+        "excess_readmissions_annual_pos": 357.6124,
+        "payment_per_discharge": 6871.0,
+        "penalty_per_excess_vs_readmission_cost": 1.9013
+      },
+      "HF": {
+        "penalty": 67641486.097,
+        "excess_above_threshold": 1629.4659,
+        "expected_rate_pct": 19.3825,
+        "penalty_per_excess_readmission": 41511.4454,
+        "share_discharges": 0.3364,
+        "share_excess_readmissions": 0.3849,
+        "share_penalty": 0.2426,
+        "n_hospitals": 2569.0,
+        "mean_err": 1.0018,
+        "share_above_threshold": 0.4994,
+        "discharges_annual": 282934.6667,
+        "excess_readmissions_annual_pos": 1600.5741,
+        "payment_per_discharge": 8523.0,
+        "penalty_per_excess_vs_readmission_cost": 2.1848
+      },
+      "HIP_KNEE": {
+        "penalty": 52835103.1719,
+        "excess_above_threshold": 216.3055,
+        "expected_rate_pct": 5.4072,
+        "penalty_per_excess_readmission": 244261.4955,
+        "share_discharges": 0.0921,
+        "share_excess_readmissions": 0.0486,
+        "share_penalty": 0.1895,
+        "n_hospitals": 1415.0,
+        "mean_err": 1.0034,
+        "share_above_threshold": 0.4996,
+        "discharges_annual": 77490.6667,
+        "excess_readmissions_annual_pos": 202.1192,
+        "payment_per_discharge": 13615.0,
+        "penalty_per_excess_vs_readmission_cost": 12.8559
+      },
+      "PN": {
+        "penalty": 73268542.5509,
+        "excess_above_threshold": 1577.5717,
+        "expected_rate_pct": 15.5396,
+        "penalty_per_excess_readmission": 46443.8744,
+        "share_discharges": 0.3214,
+        "share_excess_readmissions": 0.3564,
+        "share_penalty": 0.2627,
+        "n_hospitals": 2659.0,
+        "mean_err": 1.0018,
+        "share_above_threshold": 0.4979,
+        "discharges_annual": 270318.0,
+        "excess_readmissions_annual_pos": 1482.0742,
+        "payment_per_discharge": 7832.0,
+        "penalty_per_excess_vs_readmission_cost": 2.4444
+      }
+    },
+    "hf_pn_share_excess_readmissions": 0.7413,
+    "hf_pn_share_penalty": 0.5053,
+    "surgical_share_penalty": 0.3567,
+    "surgical_share_discharges": 0.1297,
+    "segments": {
+      "Census region": {
+        "South": {
+          "n_hospitals": 1136,
+          "mean_err": 1.0075,
+          "ci_low": 1.0053,
+          "ci_high": 1.0098,
+          "share_penalized": 0.8565,
+          "share_discharges": 0.3937,
+          "share_excess_readmissions": 0.3828,
+          "share_penalty": 0.4004,
+          "penalty_per_discharge": 337.21
+        },
+        "Midwest": {
+          "n_hospitals": 662,
+          "mean_err": 0.9972,
+          "ci_low": 0.9942,
+          "ci_high": 1.0002,
+          "share_penalized": 0.8218,
+          "share_discharges": 0.2299,
+          "share_excess_readmissions": 0.2058,
+          "share_penalty": 0.2071,
+          "penalty_per_discharge": 298.7
+        },
+        "West": {
+          "n_hospitals": 552,
+          "mean_err": 0.991,
+          "ci_low": 0.9876,
+          "ci_high": 0.9943,
+          "share_penalized": 0.8007,
+          "share_discharges": 0.1698,
+          "share_excess_readmissions": 0.1444,
+          "share_penalty": 0.1417,
+          "penalty_per_discharge": 276.8
+        },
+        "Northeast": {
+          "n_hospitals": 427,
+          "mean_err": 1.009,
+          "ci_low": 1.0048,
+          "ci_high": 1.0131,
+          "share_penalized": 0.8829,
+          "share_discharges": 0.2066,
+          "share_excess_readmissions": 0.2669,
+          "share_penalty": 0.2508,
+          "penalty_per_discharge": 402.5
+        }
+      },
+      "Ownership": {
+        "For-profit": {
+          "n_hospitals": 599,
+          "mean_err": 1.0142,
+          "ci_low": 1.0105,
+          "ci_high": 1.0178,
+          "share_penalized": 0.818,
+          "share_discharges": 0.1549,
+          "share_excess_readmissions": 0.185,
+          "share_penalty": 0.1973,
+          "penalty_per_discharge": 422.16
+        },
+        "Government": {
+          "n_hospitals": 390,
+          "mean_err": 1.0007,
+          "ci_low": 0.9971,
+          "ci_high": 1.0044,
+          "share_penalized": 0.8256,
+          "share_discharges": 0.1109,
+          "share_excess_readmissions": 0.0908,
+          "share_penalty": 0.0916,
+          "penalty_per_discharge": 273.97
+        },
+        "Non-profit": {
+          "n_hospitals": 1788,
+          "mean_err": 0.9988,
+          "ci_low": 0.9969,
+          "ci_high": 1.0006,
+          "share_penalized": 0.8523,
+          "share_discharges": 0.7342,
+          "share_excess_readmissions": 0.7242,
+          "share_penalty": 0.7111,
+          "penalty_per_discharge": 321.18
+        }
+      },
+      "Size": {
+        "Large": {
+          "n_hospitals": 937,
+          "mean_err": 1.0028,
+          "ci_low": 1.0002,
+          "ci_high": 1.0054,
+          "share_penalized": 0.921,
+          "share_discharges": 0.693,
+          "share_excess_readmissions": 0.7346,
+          "share_penalty": 0.7483,
+          "penalty_per_discharge": 358.05
+        },
+        "Medium": {
+          "n_hospitals": 891,
+          "mean_err": 1.0026,
+          "ci_low": 1.0003,
+          "ci_high": 1.005,
+          "share_penalized": 0.8754,
+          "share_discharges": 0.2345,
+          "share_excess_readmissions": 0.2139,
+          "share_penalty": 0.2002,
+          "penalty_per_discharge": 283.06
+        },
+        "Small": {
+          "n_hospitals": 949,
+          "mean_err": 0.999,
+          "ci_low": 0.9966,
+          "ci_high": 1.0013,
+          "share_penalized": 0.7302,
+          "share_discharges": 0.0725,
+          "share_excess_readmissions": 0.0516,
+          "share_penalty": 0.0515,
+          "penalty_per_discharge": 235.61
+        }
+      },
+      "Star rating": {
+        "4 star": {
+          "n_hospitals": 749,
+          "mean_err": 0.9859,
+          "ci_low": 0.9833,
+          "ci_high": 0.9885,
+          "share_penalized": 0.8171,
+          "share_discharges": 0.2993,
+          "share_excess_readmissions": 0.2094,
+          "share_penalty": 0.2134,
+          "penalty_per_discharge": 236.47
+        },
+        "2 star": {
+          "n_hospitals": 562,
+          "mean_err": 1.0251,
+          "ci_low": 1.0219,
+          "ci_high": 1.0282,
+          "share_penalized": 0.952,
+          "share_discharges": 0.1939,
+          "share_excess_readmissions": 0.2993,
+          "share_penalty": 0.2904,
+          "penalty_per_discharge": 496.53
+        },
+        "3 star": {
+          "n_hospitals": 822,
+          "mean_err": 1.0062,
+          "ci_low": 1.0037,
+          "ci_high": 1.0087,
+          "share_penalized": 0.8942,
+          "share_discharges": 0.3014,
+          "share_excess_readmissions": 0.3208,
+          "share_penalty": 0.3276,
+          "penalty_per_discharge": 360.5
+        },
+        "1 star": {
+          "n_hospitals": 167,
+          "mean_err": 1.0487,
+          "ci_low": 1.0419,
+          "ci_high": 1.0555,
+          "share_penalized": 0.994,
+          "share_discharges": 0.0447,
+          "share_excess_readmissions": 0.0976,
+          "share_penalty": 0.0912,
+          "penalty_per_discharge": 677.25
+        },
+        "5 star": {
+          "n_hospitals": 280,
+          "mean_err": 0.9668,
+          "ci_low": 0.9624,
+          "ci_high": 0.9712,
+          "share_penalized": 0.7179,
+          "share_discharges": 0.1473,
+          "share_excess_readmissions": 0.0674,
+          "share_penalty": 0.0654,
+          "penalty_per_discharge": 147.29
+        },
+        "Not rated": {
+          "n_hospitals": 197,
+          "mean_err": 0.9764,
+          "ci_low": 0.9618,
+          "ci_high": 0.9911,
+          "share_penalized": 0.4416,
+          "share_discharges": 0.0135,
+          "share_excess_readmissions": 0.0055,
+          "share_penalty": 0.0119,
+          "penalty_per_discharge": 293.09
+        }
+      },
+      "Spending (MSPB)": {
+        "1.00-1.04": {
+          "n_hospitals": 731,
+          "mean_err": 1.0041,
+          "ci_low": 1.0012,
+          "ci_high": 1.0069,
+          "share_penalized": 0.8837,
+          "share_discharges": 0.3358,
+          "share_excess_readmissions": 0.3402,
+          "share_penalty": 0.3531,
+          "penalty_per_discharge": 348.67
+        },
+        "1.05 and above": {
+          "n_hospitals": 576,
+          "mean_err": 1.0121,
+          "ci_low": 1.009,
+          "ci_high": 1.0152,
+          "share_penalized": 0.8889,
+          "share_discharges": 0.1939,
+          "share_excess_readmissions": 0.231,
+          "share_penalty": 0.2193,
+          "penalty_per_discharge": 375.05
+        },
+        "0.95-0.99": {
+          "n_hospitals": 734,
+          "mean_err": 1.0005,
+          "ci_low": 0.9976,
+          "ci_high": 1.0034,
+          "share_penalized": 0.8597,
+          "share_discharges": 0.3045,
+          "share_excess_readmissions": 0.3106,
+          "share_penalty": 0.3041,
+          "penalty_per_discharge": 331.15
+        },
+        "Not available": {
+          "n_hospitals": 26,
+          "mean_err": 1.0068,
+          "ci_low": 0.9841,
+          "ci_high": 1.0294,
+          "share_penalized": 0.6538,
+          "share_discharges": 0.0028,
+          "share_excess_readmissions": 0.0019,
+          "share_penalty": 0.0033,
+          "penalty_per_discharge": 391.01
+        },
+        "Below 0.95": {
+          "n_hospitals": 710,
+          "mean_err": 0.9908,
+          "ci_low": 0.9877,
+          "ci_high": 0.9939,
+          "share_penalized": 0.7465,
+          "share_discharges": 0.1629,
+          "share_excess_readmissions": 0.1162,
+          "share_penalty": 0.1201,
+          "penalty_per_discharge": 244.46
+        }
+      },
+      "Emergency services": {
+        "No emergency dept": {
+          "n_hospitals": 192,
+          "mean_err": 0.9952,
+          "ci_low": 0.9872,
+          "ci_high": 1.0032,
+          "share_penalized": 0.6667,
+          "share_discharges": 0.0436,
+          "share_excess_readmissions": 0.0331,
+          "share_penalty": 0.0384,
+          "penalty_per_discharge": 291.9
+        },
+        "Has emergency dept": {
+          "n_hospitals": 2585,
+          "mean_err": 1.0023,
+          "ci_low": 1.0008,
+          "ci_high": 1.0038,
+          "share_penalized": 0.8542,
+          "share_discharges": 0.9564,
+          "share_excess_readmissions": 0.9669,
+          "share_penalty": 0.9616,
+          "penalty_per_discharge": 333.4
+        }
+      }
+    },
+    "top_states_by_mean_err": [
+      {
+        "state": "MA",
+        "mean_err": 1.0344,
+        "n_hospitals": 52,
+        "share_penalized": 0.9038
+      },
+      {
+        "state": "NJ",
+        "mean_err": 1.0277,
+        "n_hospitals": 61,
+        "share_penalized": 0.9344
+      },
+      {
+        "state": "FL",
+        "mean_err": 1.0231,
+        "n_hospitals": 162,
+        "share_penalized": 0.9506
+      },
+      {
+        "state": "IL",
+        "mean_err": 1.0194,
+        "n_hospitals": 109,
+        "share_penalized": 0.9358
+      },
+      {
+        "state": "MS",
+        "mean_err": 1.0141,
+        "n_hospitals": 50,
+        "share_penalized": 0.94
+      }
+    ],
+    "bottom_states_by_mean_err": [
+      {
+        "state": "UT",
+        "mean_err": 0.9559,
+        "n_hospitals": 29
+      },
+      {
+        "state": "MT",
+        "mean_err": 0.9541,
+        "n_hospitals": 10
+      },
+      {
+        "state": "ME",
+        "mean_err": 0.9515,
+        "n_hospitals": 13
+      },
+      {
+        "state": "ND",
+        "mean_err": 0.9466,
+        "n_hospitals": 7
+      },
+      {
+        "state": "ID",
+        "mean_err": 0.9432,
+        "n_hospitals": 14
+      }
+    ],
+    "regression": {
+      "info": {
+        "n_rows": 11415,
+        "n_hospitals": 2751,
+        "r_squared": 0.017535396521220936,
+        "formula": "err_points ~ C(condition_code) + C(ownership_group, Treatment('Non-profit')) + C(size_band, Treatment('Medium')) + C(census_region, Treatment('Midwest')) + no_emergency_dept + mspb_per_005"
+      },
+      "coefficients": [
+        {
+          "group": "Ownership",
+          "term": "For-profit vs non-profit",
+          "estimate": 1.4255,
+          "ci_low": 0.9006,
+          "ci_high": 1.9505,
+          "p_value": 0.0
+        },
+        {
+          "group": "Ownership",
+          "term": "Government vs non-profit",
+          "estimate": 0.3503,
+          "ci_low": -0.1938,
+          "ci_high": 0.8945,
+          "p_value": 0.207
+        },
+        {
+          "group": "Size",
+          "term": "Large vs medium",
+          "estimate": 0.0398,
+          "ci_low": -0.4115,
+          "ci_high": 0.4911,
+          "p_value": 0.8629
+        },
+        {
+          "group": "Size",
+          "term": "Small vs medium",
+          "estimate": -0.2773,
+          "ci_low": -0.6818,
+          "ci_high": 0.1273,
+          "p_value": 0.1792
+        },
+        {
+          "group": "Region",
+          "term": "Northeast vs Midwest",
+          "estimate": 0.9834,
+          "ci_low": 0.2988,
+          "ci_high": 1.668,
+          "p_value": 0.0049
+        },
+        {
+          "group": "Region",
+          "term": "South vs Midwest",
+          "estimate": 0.4537,
+          "ci_low": -0.0446,
+          "ci_high": 0.952,
+          "p_value": 0.0743
+        },
+        {
+          "group": "Region",
+          "term": "West vs Midwest",
+          "estimate": -0.9151,
+          "ci_low": -1.5001,
+          "ci_high": -0.33,
+          "p_value": 0.0022
+        },
+        {
+          "group": "Emergency dept",
+          "term": "No emergency dept vs has one",
+          "estimate": -0.4858,
+          "ci_low": -1.3963,
+          "ci_high": 0.4247,
+          "p_value": 0.2957
+        },
+        {
+          "group": "Spending",
+          "term": "Spending index +0.05 (MSPB)",
+          "estimate": 0.3772,
+          "ci_low": 0.2594,
+          "ci_high": 0.495,
+          "p_value": 0.0
+        }
+      ]
+    },
+    "penalty_sensitivity": [
+      {
+        "scenario": "Base case",
+        "n_hospitals_penalized": 2336,
+        "total_penalty": 278855319.0,
+        "client_penalty": 1184749.0
+      },
+      {
+        "scenario": "Hidden discharges at minimum (25)",
+        "n_hospitals_penalized": 2336,
+        "total_penalty": 255301779.0,
+        "client_penalty": 1121601.0
+      },
+      {
+        "scenario": "Hidden discharges at maximum",
+        "n_hospitals_penalized": 2336,
+        "total_penalty": 302120079.0,
+        "client_penalty": 1246766.0
+      },
+      {
+        "scenario": "Threshold = 1.00 instead of national median",
+        "n_hospitals_penalized": 2308,
+        "total_penalty": 269168729.0,
+        "client_penalty": 1140263.0
+      },
+      {
+        "scenario": "Payment per discharge -30%",
+        "n_hospitals_penalized": 2336,
+        "total_penalty": 195198723.0,
+        "client_penalty": 829324.0
+      },
+      {
+        "scenario": "Payment per discharge +30%",
+        "n_hospitals_penalized": 2336,
+        "total_penalty": 362511914.0,
+        "client_penalty": 1540174.0
+      }
+    ]
+  },
+  "shrinkage": {
+    "AMI": {
+      "k": 369.5,
+      "pass_through_at_100": 0.213,
+      "pass_through_at_500": 0.575,
+      "pass_through_at_1500": 0.802,
+      "r_squared": 0.994
+    },
+    "CABG": {
+      "k": 228.4,
+      "pass_through_at_100": 0.305,
+      "pass_through_at_500": 0.686,
+      "pass_through_at_1500": 0.868,
+      "r_squared": 0.996
+    },
+    "COPD": {
+      "k": 395.9,
+      "pass_through_at_100": 0.202,
+      "pass_through_at_500": 0.558,
+      "pass_through_at_1500": 0.791,
+      "r_squared": 0.997
+    },
+    "HF": {
+      "k": 369.0,
+      "pass_through_at_100": 0.213,
+      "pass_through_at_500": 0.575,
+      "pass_through_at_1500": 0.803,
+      "r_squared": 0.998
+    },
+    "HIP_KNEE": {
+      "k": 191.9,
+      "pass_through_at_100": 0.343,
+      "pass_through_at_500": 0.723,
+      "pass_through_at_1500": 0.887,
+      "r_squared": 0.994
+    },
+    "PN": {
+      "k": 414.1,
+      "pass_through_at_100": 0.195,
+      "pass_through_at_500": 0.547,
+      "pass_through_at_1500": 0.784,
+      "r_squared": 0.997
+    }
+  },
+  "client": {
+    "name": "Illustrative NJ client group",
+    "facility_ids": [
+      "310010",
+      "310052",
+      "310069",
+      "310003",
+      "310074",
+      "310075",
+      "310061",
+      "310119"
+    ],
+    "target_hospital": "310010",
+    "target_hospital_name": "UNIVERSITY MEDICAL CENTER OF PRINCETON AT PLAINSBORO",
+    "total_penalty": 1184749.0,
+    "hospitals_penalized": 8,
+    "hospitals": [
+      {
+        "facility_id": "310010",
+        "name": "UNIVERSITY MEDICAL CENTER OF PRINCETON AT PLAINSBORO",
+        "size_band": "Large",
+        "penalty": 400553.0,
+        "reduction_pct": 0.01217,
+        "readmission_index": 1.07
+      },
+      {
+        "facility_id": "310069",
+        "name": "INSPIRA MEDICAL CENTER MULLICA HILL",
+        "size_band": "Large",
+        "penalty": 356584.0,
+        "reduction_pct": 0.01004,
+        "readmission_index": 1.069
+      },
+      {
+        "facility_id": "310052",
+        "name": "OCEAN MEDICAL CENTER",
+        "size_band": "Large",
+        "penalty": 138928.0,
+        "reduction_pct": 0.00235,
+        "readmission_index": 0.9744
+      },
+      {
+        "facility_id": "310003",
+        "name": "PALISADES MEDICAL CENTER",
+        "size_band": "Medium",
+        "penalty": 102928.0,
+        "reduction_pct": 0.00869,
+        "readmission_index": 1.0626
+      },
+      {
+        "facility_id": "310074",
+        "name": "JERSEY CITY MEDICAL CENTER",
+        "size_band": "Medium",
+        "penalty": 79480.0,
+        "reduction_pct": 0.00476,
+        "readmission_index": 1.0398
+      },
+      {
+        "facility_id": "310075",
+        "name": "MONMOUTH MEDICAL CENTER",
+        "size_band": "Medium",
+        "penalty": 60353.0,
+        "reduction_pct": 0.00355,
+        "readmission_index": 1.0161
+      },
+      {
+        "facility_id": "310061",
+        "name": "VIRTUA WILLINGBORO HOSPITAL",
+        "size_band": "Small",
+        "penalty": 36898.0,
+        "reduction_pct": 0.00479,
+        "readmission_index": 1.0314
+      },
+      {
+        "facility_id": "310119",
+        "name": "THE UNIVERSITY HOSPITAL",
+        "size_band": "Small",
+        "penalty": 9025.0,
+        "reduction_pct": 0.00311,
+        "readmission_index": 1.021
+      }
+    ],
+    "penalty_by_condition": {
+      "AMI": 96925.0,
+      "CABG": 0.0,
+      "COPD": 68059.0,
+      "HF": 510953.0,
+      "HIP_KNEE": 369548.0,
+      "PN": 139265.0
+    },
+    "top2_share": 0.6391,
+    "pilot_hospitals": [
+      "310010",
+      "310069"
+    ],
+    "pilot_hospital_names": [
+      "UNIVERSITY MEDICAL CENTER OF PRINCETON AT PLAINSBORO",
+      "INSPIRA MEDICAL CENTER MULLICA HILL"
+    ],
+    "benchmark_target": {
+      "PN": {
+        "err": 1.0048,
+        "peer_median": 0.9947,
+        "percentile": 55.4,
+        "n_peers": 704,
+        "status": "In line with peers",
+        "readmissions_vs_peer_median": 0.2
+      },
+      "HIP_KNEE": {
+        "err": 1.3835,
+        "peer_median": 1.0014,
+        "percentile": 98.8,
+        "n_peers": 577,
+        "status": "Worse than most peers",
+        "readmissions_vs_peer_median": 1.1
+      },
+      "HF": {
+        "err": 1.0354,
+        "peer_median": 0.9867,
+        "percentile": 71.2,
+        "n_peers": 704,
+        "status": "In line with peers",
+        "readmissions_vs_peer_median": 2.1
+      },
+      "COPD": {
+        "err": 1.0337,
+        "peer_median": 0.9969,
+        "percentile": 74.9,
+        "n_peers": 702,
+        "status": "In line with peers",
+        "readmissions_vs_peer_median": 0.4
+      },
+      "CABG": {
+        "err": null,
+        "peer_median": 0.9913,
+        "percentile": null,
+        "n_peers": 520,
+        "status": "Too few cases to score",
+        "readmissions_vs_peer_median": null
+      },
+      "AMI": {
+        "err": 1.0763,
+        "peer_median": 0.9998,
+        "percentile": 86.4,
+        "n_peers": 689,
+        "status": "Worse than most peers",
+        "readmissions_vs_peer_median": 0.4
+      }
+    },
+    "peer_summary_target": {
+      "n_peers": 707,
+      "target_index": 1.07,
+      "peer_median_index": 0.9971,
+      "index_percentile": 89.8161,
+      "target_penalty": 400552.7877,
+      "peer_median_penalty": 134929.4131,
+      "peer_share_penalized": 0.9222
+    }
+  },
+  "business_case": {
+    "scenarios": {
+      "broad_all": {
+        "label": "Broad program (all medical conditions, half of patients) \u2014 all 8 hospitals",
+        "enrollees": 2725.0,
+        "program_cost": 1290000.0,
+        "penalty_before": 1184749.17,
+        "penalty_after": 808648.81,
+        "avoided_penalty": 376100.36,
+        "readmissions_avoided": 58.26,
+        "readmission_savings": 1106893.32,
+        "lost_margin": 101950.7,
+        "hospital_net": -1015850.34,
+        "combined_net": -183106.68,
+        "n_hospitals_running": 8,
+        "hospital_benefit": 274149.66,
+        "hospital_roi": 0.21,
+        "cost_per_readmission_avoided": 22143.06,
+        "payback": "not within FY2032",
+        "cum_hospital_net_6y": -6402529.43,
+        "cum_combined_net_6y": -1061310.07
+      },
+      "targeted_all": {
+        "label": "Targeted pilot (heart failure + pneumonia, higher-risk patients) \u2014 all 8 hospitals",
+        "enrollees": 811.2,
+        "program_cost": 443360.0,
+        "penalty_before": 1184749.17,
+        "penalty_after": 883891.42,
+        "avoided_penalty": 300857.76,
+        "readmissions_avoided": 30.07,
+        "readmission_savings": 571425.0,
+        "lost_margin": 52631.25,
+        "hospital_net": -195133.49,
+        "combined_net": 128065.0,
+        "n_hospitals_running": 8,
+        "hospital_benefit": 248226.51,
+        "hospital_roi": 0.56,
+        "cost_per_readmission_avoided": 14741.81,
+        "payback": "not within FY2032",
+        "cum_hospital_net_6y": -1896075.34,
+        "cum_combined_net_6y": 572341.25
+      },
+      "targeted_pilot": {
+        "label": "Targeted pilot (heart failure + pneumonia, higher-risk patients) \u2014 pilot at top-2 hospitals",
+        "enrollees": 342.6,
+        "program_cost": 152780.0,
+        "penalty_before": 757136.36,
+        "penalty_after": 567269.9,
+        "avoided_penalty": 189866.46,
+        "readmissions_avoided": 15.02,
+        "readmission_savings": 285285.0,
+        "lost_margin": 26276.25,
+        "hospital_net": 10810.21,
+        "combined_net": 132505.0,
+        "n_hospitals_running": 2,
+        "hospital_benefit": 163590.21,
+        "hospital_roi": 1.07,
+        "cost_per_readmission_avoided": 10175.16,
+        "payback": "not within FY2032",
+        "cum_hospital_net_6y": -457170.31,
+        "cum_combined_net_6y": 670651.25
+      },
+      "targeted_pilot_risk30": {
+        "label": "Pilot + hospital keeps 30% of readmission savings (risk contracts)",
+        "enrollees": 342.6,
+        "program_cost": 152780.0,
+        "penalty_before": 757136.36,
+        "penalty_after": 567269.9,
+        "avoided_penalty": 189866.46,
+        "readmissions_avoided": 15.02,
+        "readmission_savings": 285285.0,
+        "lost_margin": 18393.38,
+        "hospital_net": 104278.58,
+        "combined_net": 132505.0,
+        "n_hospitals_running": 2,
+        "hospital_benefit": 257058.58,
+        "hospital_roi": 1.68,
+        "cost_per_readmission_avoided": 10175.16,
+        "payback": "FY2032",
+        "cum_hospital_net_6y": 33538.66,
+        "cum_combined_net_6y": 670651.25
+      },
+      "broad_fy2026_rules": {
+        "label": "Broad program under FY2026 rules (no MA in score, 3-year window)",
+        "enrollees": 1362.5,
+        "program_cost": 745000.0,
+        "penalty_before": 1184749.17,
+        "penalty_after": 843977.3,
+        "avoided_penalty": 340771.87,
+        "readmissions_avoided": 29.13,
+        "readmission_savings": 553446.66,
+        "lost_margin": 50975.35,
+        "hospital_net": -455203.48,
+        "combined_net": -191553.34,
+        "n_hospitals_running": 8,
+        "hospital_benefit": 289796.52,
+        "hospital_roi": 0.39,
+        "cost_per_readmission_avoided": 25576.09,
+        "payback": "not within FY2032",
+        "cum_hospital_net_6y": -3369917.31,
+        "cum_combined_net_6y": -1105655.03
+      }
+    },
+    "break_even": {
+      "pilot_relative_reduction": 0.0872,
+      "pilot_cost_per_enrollee": 331.5534,
+      "broad_relative_reduction": null,
+      "broad_cost_per_enrollee": 27.2109,
+      "pilot_relative_reduction_combined": 0.0536
+    },
+    "monte_carlo": {
+      "runs": 2000,
+      "seed": 42,
+      "p_hospital_net_positive": 0.413,
+      "p_combined_net_positive": 0.877,
+      "hospital_net_p5": -110359.0,
+      "hospital_net_p50": -11886.0,
+      "hospital_net_p95": 74243.0
+    },
+    "sensitivity_pilot": {
+      "any_hospital_sign_flip": true,
+      "any_combined_sign_flip": false,
+      "hospital_flips": [
+        {
+          "label": "Readmission reduction among enrolled",
+          "change": "-30%"
+        },
+        {
+          "label": "Cost per enrolled patient",
+          "change": "+30%"
+        },
+        {
+          "label": "Fixed cost per hospital",
+          "change": "+30%"
+        },
+        {
+          "label": "Medicare payment per discharge (penalty size)",
+          "change": "-30%"
+        },
+        {
+          "label": "Medicare Advantage share of patients",
+          "change": "+30%"
+        }
+      ]
+    },
+    "sensitivity_broad": {
+      "any_hospital_sign_flip": false,
+      "any_combined_sign_flip": true
+    },
+    "national": {
+      "broad": {
+        "hospitals_running": 2688,
+        "hospitals_positive": 1,
+        "share_positive": 0.0003720238095238095
+      },
+      "targeted": {
+        "hospitals_running": 1828,
+        "hospitals_positive": 187,
+        "share_positive": 0.10229759299781181
+      }
+    },
+    "params_broad": {
+      "target_conditions": [
+        "HF",
+        "PN",
+        "COPD",
+        "AMI"
+      ],
+      "targeting": "all",
+      "reach": 0.5,
+      "relative_reduction": 0.1,
+      "effect_multipliers": {
+        "HF": 1.5,
+        "PN": 1.0,
+        "AMI": 1.0,
+        "COPD": 0.5,
+        "CABG": 0.3,
+        "HIP_KNEE": 0.3
+      },
+      "risk_multiplier": 1.0,
+      "cost_per_enrollee": 400,
+      "fixed_cost_per_hospital": 25000,
+      "cost_per_readmission": 19000,
+      "hospital_share_of_savings": 0.0,
+      "lost_margin_per_readmission": 1750,
+      "ma_share": 0.5,
+      "pass_through_mode": "volume",
+      "payment_scale": 1.0,
+      "penalty_cap_pct": 0.03,
+      "hrrp_payment_share": 0.133,
+      "neutrality_modifier": 0.9627,
+      "data_years": 3,
+      "window_years": 2.0
+    },
+    "params_targeted": {
+      "target_conditions": [
+        "HF",
+        "PN"
+      ],
+      "targeting": "above_threshold",
+      "reach": 0.3,
+      "relative_reduction": 0.1,
+      "effect_multipliers": {
+        "HF": 1.5,
+        "PN": 1.0,
+        "AMI": 1.0,
+        "COPD": 0.5,
+        "CABG": 0.3,
+        "HIP_KNEE": 0.3
+      },
+      "risk_multiplier": 1.5,
+      "cost_per_enrollee": 300,
+      "fixed_cost_per_hospital": 25000,
+      "cost_per_readmission": 19000,
+      "hospital_share_of_savings": 0.0,
+      "lost_margin_per_readmission": 1750,
+      "ma_share": 0.5,
+      "pass_through_mode": "volume",
+      "payment_scale": 1.0,
+      "penalty_cap_pct": 0.03,
+      "hrrp_payment_share": 0.133,
+      "neutrality_modifier": 0.9627,
+      "data_years": 3,
+      "window_years": 2.0
+    }
+  },
+  "known_numbers": {
+    "fy2026_hospitals_penalized": 2304,
+    "fy2026_eligible_hospitals": 2797,
+    "fy2026_mean_reduction_penalized": 0.0044,
+    "fy2026_hospitals_at_cap": 15,
+    "fy2026_total_penalty_reference_low": 316131336,
+    "fy2026_total_penalty_reference_high": 361347626
+  }
+}

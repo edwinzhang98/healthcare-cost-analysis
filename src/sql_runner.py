@@ -38,6 +38,7 @@ def _set_variables(con: duckdb.DuckDBPyConnection, cfg: dict) -> None:
         "performance_years": pen["performance_years"],
         "penalty_cap_pct": pen["penalty_cap_pct"],
         "hrrp_payment_share": pen["hrrp_payment_share"],
+        "neutrality_modifier": pen["neutrality_modifier"],
     }
     for name, value in variables.items():
         literal = f"'{value}'" if isinstance(value, str) else repr(value)

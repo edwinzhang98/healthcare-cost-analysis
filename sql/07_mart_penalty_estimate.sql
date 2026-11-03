@@ -4,10 +4,12 @@
 -- Purpose : Base-case estimate of each hospital's annual HRRP penalty, using the
 --           CMS payment-adjustment formula (docs/02_metric_definitions.md):
 --
---     reduction % = sum over conditions of
+--     reduction % = NM x sum over conditions of
 --                   (condition payments / total payments) x max(ERR - threshold, 0)
---     capped at 3%. Multiplying by total payments gives the dollar penalty:
---     penalty $   = sum over conditions of condition payments x max(ERR - threshold, 0)
+--     capped at 3%. NM is CMS's neutrality modifier (0.9627 in FY2026), a single
+--     national multiplier that keeps peer grouping budget neutral. Multiplying by
+--     total payments gives the dollar penalty:
+--     penalty $   = NM x sum over conditions of condition payments x max(ERR - threshold, 0)
 --
 --   condition payments (per year) = estimated eligible discharges per year x
 --   average base operating DRG payment per discharge for that condition
@@ -21,12 +23,13 @@
 --           mart_penalty_hospital  = facility_id
 -- Inputs  : fct_hospital_condition, seed_condition_params
 -- Outputs : mart_penalty_condition, mart_penalty_hospital
--- Params  : penalty_cap_pct (default 0.03), hrrp_payment_share (default 0.10)
+-- Params  : penalty_cap_pct (0.03), hrrp_payment_share (0.133), neutrality_modifier (0.9627)
 -- Run     : python -m src.sql_runner sql/07_mart_penalty_estimate.sql
 -- =============================================================================
 
 SET VARIABLE penalty_cap_pct    = COALESCE(getvariable('penalty_cap_pct'), 0.03);
-SET VARIABLE hrrp_payment_share = COALESCE(getvariable('hrrp_payment_share'), 0.10);
+SET VARIABLE hrrp_payment_share = COALESCE(getvariable('hrrp_payment_share'), 0.133);
+SET VARIABLE neutrality_modifier = COALESCE(getvariable('neutrality_modifier'), 0.9627);
 
 CREATE OR REPLACE TABLE mart_penalty_condition AS
 SELECT
@@ -42,7 +45,8 @@ SELECT
     CASE WHEN f.has_err THEN f.discharges_est_annual * s.base_payment_per_discharge ELSE 0 END
                                                         AS condition_payments_annual,
     CASE WHEN f.has_err AND f.is_payment_eligible
-         THEN f.discharges_est_annual * s.base_payment_per_discharge * f.excess_ratio_over_threshold
+         THEN getvariable('neutrality_modifier') * f.discharges_est_annual
+              * s.base_payment_per_discharge * f.excess_ratio_over_threshold
          ELSE 0 END                                     AS penalty_contribution_uncapped
 FROM fct_hospital_condition f
 JOIN seed_condition_params s USING (condition_code);

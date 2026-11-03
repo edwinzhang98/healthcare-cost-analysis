@@ -23,7 +23,8 @@ random_seed: 42
 penalty_model:
   performance_years: 3          # HRRP window = 36 months (2021-07-01 to 2024-06-30)
   penalty_cap_pct: 0.03         # statutory maximum reduction
-  hrrp_payment_share: 0.10      # HRRP-condition share of a hospital's base operating DRG payments (cap only)
+  hrrp_payment_share: 0.133     # median sum of the six DRG payment ratios, CMS FY2026 HRRP supplemental file (cap and % only)
+  neutrality_modifier: 0.9627   # CMS FY2026 neutrality modifier (same for every hospital)
 
 # Illustrative client group used for the "our group" questions (see docs/00_plan.md).
 # Drawn by src/client.py: payment-eligible hospitals in `state` with >= min_conditions
@@ -37,3 +38,74 @@ client_group:
   size_plan: {Large: 3, Medium: 3, Small: 2}
   facility_ids: ["310010", "310052", "310069", "310003", "310074", "310075", "310061", "310119"]
   target_hospital: "310010"   # largest estimated penalty in the group; used in docs/benchmarking.md
+
+# Optional external check against CMS's actual FY2026 penalties (src/validate_cms.py).
+# These official CMS files are used only to test the method, never as model inputs.
+# Not downloaded by default; fetch with: python -m src.validate_cms --download
+validation:
+  files:
+    supplemental_fy2026:
+      path: data/external/fy2026_hrrp_supplemental_data_file.zip
+      url: https://www.cms.gov/files/zip/fy2026-hospital-readmissions-reduction-program-supplemental-data-file.zip
+    table15_fy2026:
+      path: data/external/fy2026_hrrp_table15.zip
+      url: https://www.cms.gov/files/zip/fy-2026-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
+    table15_fy2027:
+      path: data/external/fy2027_hrrp_table15.zip
+      url: https://www.cms.gov/files/zip/fy-2027-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
+
+# Business case for a post-discharge follow-up program (src/cost_model.py).
+# Sources and reasoning for every value: docs/assumptions.md.
+intervention:
+  program_start: 2027-01-01     # assumed go-live after the next budget cycle
+  ramp_first_year: 0.5          # enrollment and effect at half strength in the first 12 months
+  discount_rate: 0.03
+  horizon_years: 6              # FY2027-FY2032
+  monte_carlo_runs: 2000
+  presets:
+    broad:                      # the program as first proposed: every medical condition, every hospital
+      label: Broad program (all medical conditions, half of patients)
+      target_conditions: [HF, PN, COPD, AMI]
+      targeting: all
+      reach: 0.50
+      risk_multiplier: 1.0
+      relative_reduction: 0.10
+      cost_per_enrollee: 400
+      fixed_cost_per_hospital: 25000
+      cost_per_readmission: 19000
+      hospital_share_of_savings: 0.0
+      lost_margin_per_readmission: 1750
+      ma_share: 0.50
+      pass_through_mode: volume
+    targeted:                   # recommended pilot design
+      label: Targeted pilot (heart failure + pneumonia, higher-risk patients)
+      target_conditions: [HF, PN]
+      targeting: above_threshold
+      reach: 0.30
+      risk_multiplier: 1.5
+      relative_reduction: 0.10
+      cost_per_enrollee: 300
+      fixed_cost_per_hospital: 25000
+      cost_per_readmission: 19000
+      hospital_share_of_savings: 0.0
+      lost_margin_per_readmission: 1750
+      ma_share: 0.50
+      pass_through_mode: volume
+  pilot_hospitals_top_n: 2      # pilot at the client hospitals with the largest estimated penalty
+  # low / base / high for the Monte Carlo (triangular) and the scenario table
+  ranges:
+    relative_reduction: [0.03, 0.10, 0.20]
+    cost_per_enrollee: [200, 300, 600]
+    risk_multiplier: [1.2, 1.5, 1.8]
+    ma_share: [0.35, 0.50, 0.65]
+    payment_scale: [0.85, 1.0, 1.25]
+    fixed_cost_per_hospital: [10000, 25000, 60000]
+
+# Published CMS figures used as "known numbers" in the sanity checks (docs/assumptions.md has sources).
+known_numbers:
+  fy2026_hospitals_penalized: 2304          # CMS FY2026 Table 15 / FY2026 IPPS final rule impact analysis
+  fy2026_eligible_hospitals: 2797           # non-Maryland hospitals with 25+ discharges in >= 1 measure (impact analysis)
+  fy2026_mean_reduction_penalized: 0.0044   # mean payment cut among penalized hospitals, FY2026
+  fy2026_hospitals_at_cap: 15
+  fy2026_total_penalty_reference_low: 316131336  # CMS estimate under FY2025 methodology (FY2026 rule, Table VI.K-03)
+  fy2026_total_penalty_reference_high: 361347626  # CMS FY2027 estimate (FY2027 final rule), nearest published total
