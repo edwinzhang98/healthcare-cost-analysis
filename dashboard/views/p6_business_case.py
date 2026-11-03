@@ -63,35 +63,35 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
         st.radio("Which hospital-conditions", ["above_threshold", "all"], key="bc_targeting",
                  format_func={"above_threshold": "Only where we are above the penalty threshold",
                               "all": "All, regardless of score"}.get)
-        st.slider("Share of eligible Medicare patients enrolled (%)", 10, 90, key="bc_reach", step=5)
+        st.slider("Share of eligible Medicare patients enrolled", 10, 90, key="bc_reach", step=5, format="%d%%")
         st.slider("Readmission risk of enrolled patients vs average (×)", 1.0, 2.0, key="bc_risk_multiplier", step=0.1,
                   help="1.0 = enroll a random sample; 1.5 = enroll higher-risk patients first (top ~30% by a risk score).")
     with d2:
         md("**What the program achieves and costs**")
-        st.slider("Readmission reduction among enrolled patients (%)", 0, 30, key="bc_relative_reduction", step=1,
+        st.slider("Readmission reduction among enrolled patients", 0, 30, key="bc_relative_reduction", step=1, format="%d%%",
                   help="Base for pneumonia / heart attack (recent trials: about 10%). Applied ×1.2 for heart failure, "
                        "×0.5 for COPD, ×0.3 for surgery, following the strength of the trial evidence.")
-        st.slider("Cost per enrolled patient ($)", 100, 1000, key="bc_cost_per_enrollee", step=25)
-        st.slider("Fixed cost per hospital per year ($)", 0, 150_000, key="bc_fixed_cost_per_hospital", step=5_000)
+        st.slider("Cost per enrolled patient", 100, 1000, key="bc_cost_per_enrollee", step=25, format="$%d")
+        st.slider("Fixed cost per hospital per year", 0, 150_000, key="bc_fixed_cost_per_hospital", step=5_000, format="$%d")
         st.radio("How much of a real change reaches the CMS score", ["volume", "full"], key="bc_pass",
                  format_func={"volume": "Depends on hospital volume (measured)", "full": "All of it (naive)"}.get)
-        st.slider("How much of today's excess would persist anyway (%)", 30, 100, key="bc_persistence", step=5,
+        st.slider("How much of today's excess would persist anyway", 30, 100, key="bc_persistence", step=5, format="%d%%",
                   help="Penalties regress toward the mean: CMS's actual FY2027 cuts kept only ~58% of the FY2026 "
                        "cuts. 100% = assume today's penalty simply continues.")
     with d3:
         md("**Money and rules**")
-        st.slider("Medicare Advantage share of patients (%)", 0, 80, key="bc_ma_share", step=5,
+        st.slider("Medicare Advantage share of patients", 0, 80, key="bc_ma_share", step=5, format="%d%%",
                   help="From FY2027, CMS's score counts MA patients, but the penalty applies only to traditional "
                        "Medicare payments. Set to 0 to reproduce the FY2026 rules.")
-        st.slider("Share of payer savings returned to the hospital (%)", 0, 100, key="bc_hospital_share_of_savings",
+        st.slider("Share of payer savings returned to the hospital", 0, 100, key="bc_hospital_share_of_savings", format="%d%%",
                   step=5, help="Shared-savings / ACO contracts: payers save about the Medicare payment on each "
                                "avoided readmission; this is the share they give back.")
-        st.slider("Cost of one readmission to the hospital ($)", 10_000, 30_000, key="bc_cost_per_readmission", step=500)
-        st.slider("Share of that cost that is variable (%)", 50, 95, key="bc_variable_cost_share", step=5,
+        st.slider("Cost of one readmission to the hospital", 10_000, 30_000, key="bc_cost_per_readmission", step=500, format="$%d")
+        st.slider("Share of that cost that is variable", 50, 95, key="bc_variable_cost_share", step=5, format="%d%%",
                   help="MedPAC: 75-85% of hospital costs vary with volume. The rest (buildings, most salaries in the "
                        "short run) stays when a readmission is avoided.")
-        st.checkbox("Freed beds are refilled with other patients (no lost margin)", key="bc_beds_refilled")
-        st.slider("Medicare payment per discharge, % of base estimate", 70, 130, key="bc_payment_scale", step=5)
+        st.checkbox("Freed beds get refilled (no lost margin)", key="bc_beds_refilled")
+        st.slider("Medicare payment per discharge, vs base estimate", 70, 130, key="bc_payment_scale", step=5, format="%d%%")
 
 ss = st.session_state
 if not ss["bc_hospitals"] or not ss["bc_conditions"]:

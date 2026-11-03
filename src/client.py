@@ -43,3 +43,8 @@ def check_client_group(dim: pd.DataFrame) -> bool:
     cfg = client_config()
     drawn = draw_client_group(dim, cfg["state"], cfg["size_plan"], cfg["seed"], cfg["min_conditions"])
     return drawn == client_ids()
+
+
+def display_names() -> dict[str, str]:
+    """Short names for the client hospitals (charts, tiles); others fall back to the CMS name."""
+    return {str(k): v for k, v in (load_config().get("client_display_names") or {}).items()}

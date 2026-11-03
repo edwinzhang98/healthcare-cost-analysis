@@ -30,7 +30,7 @@ kpis([
     ("Our group's estimated penalty", f"{money(cl['total_penalty'])}/yr",
      f"{cl['hospitals_penalized']} of {len(cl['facility_ids'])} hospitals penalized (FY2026 program)"),
     ("Carried by 2 hospitals", pct(cl["top2_share"]),
-     " + ".join(short_name(h['name'], 22) for h in cl["hospitals"][:2])),
+     " + ".join(hospital_names()[h['facility_id']] for h in cl["hospitals"][:2])),
     ("Follow-up program, best case", f"${pilot['benefit_cost_ratio']:.2f} per $1",
      f"returned in avoided penalties; break-even needs ≥{pct(be['pilot_relative_reduction'])} fewer readmissions"),
 ])

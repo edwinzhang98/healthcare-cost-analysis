@@ -118,3 +118,13 @@ known_numbers:
   fy2026_hospitals_at_cap: 15
   fy2026_total_penalty_reference_low: 316131336  # CMS estimate under FY2025 methodology (FY2026 rule, Table VI.K-03)
   fy2026_total_penalty_reference_high: 361347626  # CMS FY2027 estimate (FY2027 final rule), nearest published total
+# Short display names for charts and tiles (client hospitals only)
+client_display_names:
+  "310010": Princeton (Plainsboro)
+  "310052": Ocean Medical Center
+  "310069": Inspira Mullica Hill
+  "310003": Palisades Medical Center
+  "310074": Jersey City Medical Center
+  "310075": Monmouth Medical Center
+  "310061": Virtua Willingboro
+  "310119": University Hospital (Newark)

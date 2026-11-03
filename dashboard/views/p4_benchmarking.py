@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, CONDITION_LABELS, chart, charts, how_to_read, hospital_conditions, hospital_label,
+from dashboard.common import (md, esc, CONDITION_LABELS, chart, charts, how_to_read, hospital_conditions, hospital_label, hospital_names,
                               hospital_options, kpis, money, page, pct, short_name, show_data, table)
 from src import benchmarking, client
 
 page("Hospital Benchmarking",
-     "How does one hospital compare with similar hospitals (same ownership type and size), condition by condition?")
+     "How does one hospital compare with similar hospitals (same ownership type and Medicare volume), condition by "
+     "condition?")
 
 dim = table("dim_hospital")
 hc = hospital_conditions()
@@ -24,7 +25,7 @@ with f2:
     keys = []
     if k1.checkbox("Ownership", value=True):
         keys.append("ownership_group")
-    if k2.checkbox("Size band", value=True):
+    if k2.checkbox("HRRP volume band", value=True):
         keys.append("size_band")
     if k1.checkbox("Census region", value=False):
         keys.append("census_region")
@@ -36,7 +37,7 @@ bench = benchmarking.benchmark(hc, dim, fid, tuple(keys))
 summ = benchmarking.peer_summary(dim, ph, fid, tuple(keys))
 peers = benchmarking.peer_ids(dim, fid, tuple(keys))
 peer_rows = hc[hc["facility_id"].isin(peers) & hc["has_err"]]
-name = short_name(row["facility_name"], 40)
+name = short_name(hospital_names().get(fid, row["facility_name"]), 40)
 
 peer_desc = ", ".join({"ownership_group": f"{row['ownership_group'].lower()}",
                        "size_band": f"{row['size_band'].lower()}-volume",
@@ -80,27 +81,31 @@ chart(charts.benchmark_strip(
     "ERR by condition: gray = peer hospitals (box = middle half), blue diamond = this hospital, red tick = national "
     "penalty threshold; right is worse"), key="bench")
 
-tbl = bench.assign(condition=bench["condition_code"].map(CONDITION_LABELS))[
-    ["condition", "status", "target_err", "peer_median", "peer_p25", "peer_p75", "percentile_vs_peers",
-     "national_threshold", "readmissions_vs_peer_median", "n_peers", "discharges_annual"]]
-st.dataframe(tbl.round({"target_err": 3, "peer_median": 3, "peer_p25": 3, "peer_p75": 3, "percentile_vs_peers": 0,
-                        "national_threshold": 3, "readmissions_vs_peer_median": 1, "discharges_annual": 0}),
+tbl = (bench.assign(condition=bench["condition_code"].map(CONDITION_LABELS),
+                    _o=bench["condition_code"].map({c: i for i, c in enumerate(charts.CONDITION_ORDER)}))
+       .sort_values("_o")[["condition", "status", "target_err", "peer_median", "peer_p25", "peer_p75",
+                           "percentile_vs_peers", "national_threshold", "readmissions_vs_peer_median", "n_peers",
+                           "discharges_annual"]])
+num = lambda label, fmt: st.column_config.NumberColumn(label, format=fmt)
+st.dataframe(tbl.astype({c: float for c in tbl.columns if c not in ("condition", "status")}),
              hide_index=True, width="stretch",
-             column_config={"target_err": "This hospital's ERR", "peer_median": "Peer median",
-                            "peer_p25": "Peer 25th pct", "peer_p75": "Peer 75th pct",
-                            "percentile_vs_peers": st.column_config.NumberColumn("Higher than % of peers", format="%d%%"),
-                            "national_threshold": "Penalty threshold",
-                            "readmissions_vs_peer_median": "Readmissions/yr vs peer median",
-                            "n_peers": "Peers scored", "discharges_annual": "Eligible discharges/yr"})
+             column_config={"condition": "Condition", "status": "Status",
+                            "target_err": num("This hospital's ERR", "%.3f"), "peer_median": num("Peer median", "%.3f"),
+                            "peer_p25": num("Peer 25th pct", "%.3f"), "peer_p75": num("Peer 75th pct", "%.3f"),
+                            "percentile_vs_peers": num("Higher than % of peers", "%.0f%%"),
+                            "national_threshold": num("Penalty threshold", "%.3f"),
+                            "readmissions_vs_peer_median": num("Readmissions/yr vs peer median", "%+.1f"),
+                            "n_peers": num("Peers scored", "%d"), "discharges_annual": num("Eligible discharges/yr", "%.0f")})
 
 md("## The client group side by side")
 cl = dim[dim["facility_id"].isin(client.client_ids())]
 grid = []
 for f in cl["facility_id"]:
     b = benchmarking.benchmark(hc, dim, f, tuple(keys)).set_index("condition_code")["percentile_vs_peers"]
-    grid.append({"Hospital": short_name(cl.set_index("facility_id").loc[f, "facility_name"], 40),
-                 **{CONDITION_LABELS[c]: b.get(c, np.nan) for c in charts.CONDITION_ORDER}})
+    grid.append({"Hospital": hospital_names().get(f, cl.set_index("facility_id").loc[f, "facility_name"]),
+                 **{CONDITION_LABELS[c]: (np.nan if pd.isna(b.get(c, np.nan)) else float(b.get(c))) for c in charts.CONDITION_ORDER}})
 grid = pd.DataFrame(grid)
+grid[grid.columns[1:]] = grid[grid.columns[1:]].astype(float)
 
 
 def _pct_color(v):

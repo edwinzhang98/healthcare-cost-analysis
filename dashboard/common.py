@@ -117,10 +117,14 @@ def all_model_inputs() -> cm.ModelInputs:
 
 @st.cache_data(show_spinner=False)
 def hospital_names() -> dict[str, str]:
-    return table("dim_hospital").set_index("facility_id")["facility_name"].to_dict()
+    names = table("dim_hospital").set_index("facility_id")["facility_name"].to_dict()
+    names.update(client.display_names())
+    return names
 
 
 def short_name(name: str, n: int = 34) -> str:
+    if not name.isupper():          # already a display name
+        return name if len(name) <= n else name[: n - 1] + "…"
     name = name.title().replace("Of ", "of ").replace("At ", "at ").replace("And ", "and ")
     return name if len(name) <= n else name[: n - 1] + "…"
 

@@ -429,6 +429,7 @@ def waterfall(t: dict, share: float, title: str, subtitle: str) -> go.Figure:
              ("Payer savings shared back", t.get("savings_shared_with_hospital", 0.0)),
              ("Lost fee-for-service margin", -t.get("lost_margin", 0.0)),
              ("Program cost", -t["program_cost"])]
+    steps = [s_ for s_ in steps if abs(s_[1]) > 0.5 or s_[0] in ("Avoided HRRP penalty", "Program cost")]
     net = sum(v for _, v in steps)
     fig = go.Figure(go.Waterfall(
         orientation="v", measure=["relative"] * len(steps) + ["total"],
