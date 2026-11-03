@@ -1,0 +1,7 @@
+condition_code,measure_name,condition_label,care_type,sort_order,base_payment_per_discharge
+HF,READM-30-HF-HRRP,Heart failure,Medical,1,7000
+PN,READM-30-PN-HRRP,Pneumonia,Medical,2,8000
+COPD,READM-30-COPD-HRRP,COPD,Medical,3,6000
+AMI,READM-30-AMI-HRRP,Heart attack (AMI),Medical,4,13000
+CABG,READM-30-CABG-HRRP,Bypass surgery (CABG),Surgical,5,37000
+HIP_KNEE,READM-30-HIP-KNEE-HRRP,Hip/knee replacement,Surgical,6,13500

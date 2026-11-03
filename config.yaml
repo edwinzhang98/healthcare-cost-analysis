@@ -1,0 +1,39 @@
+# Project configuration. Relative paths are resolved from the repo root.
+# Every model parameter below is explained, with its source, in docs/assumptions.md.
+
+data:
+  # Folder holding the three CMS CSV extracts (never committed to the repo).
+  # Override without editing this file: set CMS_RAW_DIR in .env (see .env.example).
+  raw_dir: ~/projects/data-projects/datasets/p4-cms-2025
+  files:
+    hrrp: hrrp_readmissions.csv
+    mspb: medicare_spending_per_beneficiary.csv
+    hospital_info: hospital_general_information.csv
+  seed_dir: seeds
+  processed_dir: data/processed
+  warehouse: data/warehouse.duckdb
+
+outputs:
+  reports_dir: reports
+  figures_dir: reports/figures
+  docs_dir: docs
+
+random_seed: 42
+
+penalty_model:
+  performance_years: 3          # HRRP window = 36 months (2021-07-01 to 2024-06-30)
+  penalty_cap_pct: 0.03         # statutory maximum reduction
+  hrrp_payment_share: 0.10      # HRRP-condition share of a hospital's base operating DRG payments (cap only)
+
+# Illustrative client group used for the "our group" questions (see docs/00_plan.md).
+# Drawn by src/client.py: payment-eligible hospitals in `state` with >= min_conditions
+# reported conditions, stratified by size_plan, numpy default_rng(seed).
+# NOT an actual health system; any hospital set can be analyzed in the dashboard.
+client_group:
+  name: Illustrative NJ client group
+  state: NJ
+  seed: 42
+  min_conditions: 3
+  size_plan: {Large: 3, Medium: 3, Small: 2}
+  facility_ids: ["310010", "310052", "310069", "310003", "310074", "310075", "310061", "310119"]
+  target_hospital: "310010"   # largest estimated penalty in the group; used in docs/benchmarking.md

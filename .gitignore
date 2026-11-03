@@ -1,0 +1,27 @@
+# Environments
+.venv/
+.env
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Data: raw CMS extracts are never committed; processed caches are rebuilt by `python run.py`
+data/
+datasets/
+*.duckdb
+*.duckdb.wal
+*.parquet
+*.zip
+*.gz
+*.xlsx
+*.csv
+!seeds/*.csv
+!reports/tables/*.csv
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Screenshot tooling cache
+.playwright/
