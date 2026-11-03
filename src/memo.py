@@ -21,6 +21,7 @@ th{color:#52514e} em{color:#52514e} hr{border:0;border-top:1px solid #e1e0d9;mar
   h1{font-size:15pt;margin:0 0 2pt} h2{font-size:11.5pt;margin:9pt 0 3pt}
   p,li{margin:2.5pt 0} ul,ol{margin:3pt 0;padding-left:16pt}
   table{font-size:8.4pt;margin:4pt 0} th,td{padding:2.5pt 4pt}
+  th:nth-child(1){width:10%} th:nth-child(4){width:41%}
 }
 """
 
