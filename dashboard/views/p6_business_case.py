@@ -1,12 +1,11 @@
 from dataclasses import replace
-from datetime import date
 
 import numpy as np
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, CONDITION_LABELS, all_model_inputs, chart, charts, config, hospital_names, how_to_read,
-                              kpis, metrics, money, page, pct, preset_params, short_name, show_data, table)
+from dashboard.common import (md, CONDITION_LABELS, all_model_inputs, chart, charts, config, hospital_names, how_to_read, kpis,
+                              metrics, money, page, pct, preset_params, short_name, show_data)
 from src import analysis, client, cost_model as cm
 
 cfg = config()

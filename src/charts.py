@@ -198,10 +198,6 @@ def shrinkage_curves(bins: pd.DataFrame, k: pd.DataFrame, title: str, subtitle: 
     return _title(fig, title, subtitle, height=440)
 
 
-def dq_status_table_colors(status: pd.Series) -> list[str]:
-    return [STATUS[s] for s in status]
-
-
 # ----------------------------------------------------------------- national picture
 def condition_mix(mix: pd.DataFrame, title: str, subtitle: str) -> go.Figure:
     order = [c for c in CONDITION_ORDER if c in mix["condition_code"].values][::-1]

@@ -1,9 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-import pandas as pd
-
-from dashboard.common import md, esc, chart, charts, how_to_read, metrics, money, page, pct
+from dashboard.common import md, esc, chart, charts, how_to_read, metrics, page
 from src import recommendations
 
 m = metrics()

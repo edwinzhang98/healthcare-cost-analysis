@@ -1,10 +1,8 @@
-import numpy as np
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, CONDITION_LABELS, ROOT, chart, charts, config, hospital_label, hospital_names,
-                              hospital_options, how_to_read, kpis, metrics, money, page, payments, pct, short_name,
-                              show_data, table)
+from dashboard.common import (md, CONDITION_LABELS, ROOT, chart, charts, config, hospital_label, hospital_names, hospital_options,
+                              how_to_read, kpis, metrics, money, page, payments, pct, short_name, table)
 from src import client, penalty as pen
 
 m = metrics()

@@ -1,8 +1,7 @@
-import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, CONDITION_LABELS, chart, charts, how_to_read, kpis, metrics, money, page, pct,
-                              show_data, table)
+from dashboard.common import (md, CONDITION_LABELS, chart, charts, how_to_read, kpis, metrics, money, page, pct, show_data,
+                              table)
 from src import drivers
 
 m = metrics()
@@ -117,7 +116,7 @@ if True:
     show_data(coefs.round(3), "Show the model estimates")
 
 how_to_read(
-    f"""
+    """
 - **Map:** every state is the same size, so small states are as visible as large ones. In "Average ERR" mode, blue
   states readmit fewer patients than expected and red states more (1.00 = as expected). Hover a tile for the number of
   hospitals; states with few hospitals are flagged as small samples, so treat their colors as rough.

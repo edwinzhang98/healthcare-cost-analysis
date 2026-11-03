@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, CONDITION_LABELS, chart, charts, how_to_read, hospital_conditions, hospital_label, hospital_names,
-                              hospital_options, kpis, money, page, pct, short_name, show_data, table)
+from dashboard.common import (md, CONDITION_LABELS, chart, charts, how_to_read, hospital_conditions, hospital_label, hospital_names, hospital_options,
+                              kpis, money, page, pct, short_name, table)
 from src import benchmarking, client
 
 page("Hospital Benchmarking",

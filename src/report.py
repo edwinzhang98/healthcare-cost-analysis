@@ -8,7 +8,6 @@ from __future__ import annotations
 import html
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import plotly.offline
 from jinja2 import Template
@@ -50,7 +49,6 @@ def build() -> None:
     fct = data.table("fct_hospital_condition")
     dim = data.table("dim_hospital")
     seg = data.table("mart_segment_summary")
-    names = {k: charts.CONDITION_LABELS.get(k, k) for k in []}
     hn = dim.set_index("facility_id")["facility_name"].map(lambda s: s.title().replace(" Of ", " of ").replace(" At ", " at ")).to_dict()
     short = {k: (s if len(s) <= 34 else s[:33] + "…") for k, s in hn.items()}
     short.update(client.display_names())

@@ -30,7 +30,7 @@ def peer_summary(m: dict) -> dict:
 
 def findings(m: dict) -> list[str]:
     """Three headline findings (plain language) answering the VP's three questions."""
-    cl, nat, bc = m["client"], m["national"], m["business_case"]
+    cl, bc = m["client"], m["business_case"]
     sc = bc["scenarios"]
     broad, pilot = sc["broad_all"], sc["targeted_pilot"]
     be = bc["break_even"]

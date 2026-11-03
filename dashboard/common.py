@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src import analysis, charts, client, cost_model as cm, data, penalty as pen  # noqa: E402
+from src import analysis, charts, client, cost_model as cm, data  # noqa: E402
 from src.config import load_config  # noqa: E402
 
 money, pct = charts.money, charts.pct

@@ -1,8 +1,7 @@
 import pandas as pd
 import streamlit as st
 
-from dashboard.common import (md, esc, ROOT, chart, charts, how_to_read, kpis, metrics, page, pct, show_data, status_badge,
-                              table)
+from dashboard.common import (md, ROOT, chart, charts, how_to_read, kpis, metrics, page, pct, show_data, status_badge, table)
 
 m = metrics()
 d = m["data"]
@@ -12,15 +11,13 @@ page("Data & Sanity Checks",
      "Can we trust these numbers? What is missing from the CMS files, and how did we check the estimates?")
 
 md("## The three CMS files")
-st.dataframe(pd.DataFrame([
-    {"File": "Hospital Readmissions Reduction Program (HRRP)", "Grain": "hospital × 6 conditions",
-     "Rows": "18,330 (3,055 hospitals)", "Period": "Jul 2021 – Jun 2024 (FY2026 program)",
-     "Used for": "ERR, predicted / expected rates, discharges, readmissions"},
-    {"File": "Medicare Spending Per Beneficiary (MSPB-1)", "Grain": "hospital", "Rows": "4,626",
-     "Period": "Calendar 2024", "Used for": "spending index (segment only)"},
-    {"File": "Hospital General Information", "Grain": "hospital", "Rows": "5,419", "Period": "2025 release",
-     "Used for": "ownership, type, emergency services, star rating"},
-]), hide_index=True, width="stretch")
+md("""
+| File | Grain | Rows | Period | Used for |
+|---|---|---|---|---|
+| Hospital Readmissions Reduction Program (HRRP) | hospital × 6 conditions | 18,330 (3,055 hospitals) | Jul 2021 – Jun 2024 (FY2026 program) | ERR, predicted / expected rates, discharges, readmissions |
+| Medicare Spending Per Beneficiary (MSPB-1) | hospital | 4,626 | Calendar 2024 | spending index (segment only) |
+| Hospital General Information | hospital | 5,419 | 2025 release | ownership, type, emergency services, star rating |
+""")
 st.caption("Joined on Facility ID (CMS Certification Number, read as text to keep leading zeros). "
            "Source: CMS Provider Data Catalog (Care Compare). Raw files are not stored in the repo.")
 
