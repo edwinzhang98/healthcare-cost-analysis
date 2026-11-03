@@ -11,7 +11,7 @@ The files are complete, correctly keyed and internally consistent, and every bla
 - **Complete and consistent.** 18,330 HRRP rows (3,055 hospitals × 6 conditions), unique keys, one 36-month window; the other files match their published sizes. The excess readmission ratio (ERR) = predicted ÷ expected rate on all 11,720 scored rows.
 - **Every blank explained.** 36% of rows have no ERR (CMS footnotes 1, 5, 7). 3,683 scored rows (31%; 83% for hip/knee) hide their counts; we impute their discharges.
 - **Join.** 3,035 of 3,055 hospitals match. The other 20 are no longer listed by CMS; 4 are now critical access hospitals.
-- **Validated against CMS's actual FY2026 penalties.** Same penalized-or-not call for 97.1% of 2,937 hospitals; payment cuts correlate at 0.92; our ERRs are identical to CMS's.
+- **Validated against CMS's actual FY2026 penalties.** Same penalized-or-not call for 97.1% of 2,937 hospitals; payment cuts correlate at 0.92 (partly in-sample, section 10.1); our ERRs are identical to CMS's.
 - **Known biases.** (1) The national threshold over-flags hospitals with many dual-eligible patients (CMS peer group 5: 61% of results flagged, 54% penalized); for the illustrative client group we estimate \$1.23M against \$1.04M at CMS's actual cuts (+19%). (2) Imputation overstates hip/knee discharges by a third (about +3% nationally). (3) Our national total (\$296M) is below CMS's nearest totals (\$316M, \$361M) because our payment base is smaller, not the rate; payment level is the one ±30% input that brings the two-hospital pilot to break-even.
 
 ## 2. Files and pipeline
@@ -147,7 +147,7 @@ Table 15 gives each hospital's actual payment adjustment factor ([FY2026][t15-26
 |---|---:|---:|
 | Hospitals penalized (CMS total: 2,304) | 2,336 | 2,302 |
 | Same penalized-or-not call (2,276 both, 575 neither, 60 only ours, 26 only CMS's) | 97.1% | |
-| Cut correlation per hospital, Pearson / Spearman | 0.92 / 0.94 | |
+| Cut correlation per hospital, Pearson / Spearman (partly in-sample; section 10.1) | 0.92 / 0.94 | |
 | Mean / median cut among each side's penalized hospitals | 0.46% / 0.34% | 0.44% / 0.30% |
 | Hospitals at the 3% cap | 10 | 15 |
 | ERR, largest absolute difference (11,523 rows at 2,791 hospitals) | 0.0000 | |
@@ -258,7 +258,7 @@ CMS prints counts of 1,000 or more with a thousands separator ("2,393"), and `sr
 | J3 | PASS | Join | Matched HRRP hospitals are all Acute Care Hospitals | 100% | 100.0% | HRRP applies to short-term acute care (IPPS) hospitals only |
 | J4 | PASS | Join | State agrees between HRRP and Hospital General Information | 0 mismatches | 0 mismatches | – |
 | J5 | WARN | Join | Hospital name differs between files (renamed since the period) | info | 52 hospitals | IDs match, so names are informational only; current name is shown |
-| S1 | WARN | Scope | Maryland hospitals (exempt from HRRP payment cuts) flagged | info | 43 hospitals | kept for benchmarking, excluded from penalty totals |
+| S1 | WARN | Scope | Maryland hospitals (exempt from HRRP payment cuts) flagged | info | 43 hospitals | kept in the tables; excluded from thresholds, peer sets, segment statistics and penalty totals |
 | S2 | PASS | Scope | Payment-eligible hospitals in the analysis | info | 2992 hospitals (2777 with at least one ERR) | – |
 | V8 | PASS | Known numbers | National median ERR per condition is close to 1.00 | all within 0.98-1.02 | range 0.991-1.0008 | ERR is built so that an average hospital scores about 1.00 |
 | P2 | PASS | Known numbers | Estimated penalized hospitals vs CMS FY2026 (2,304) | within ±5% of 2,304 | 2,336 (+1.4%) | CMS Table 15 / FY2026 IPPS final rule impact analysis |

@@ -37,7 +37,7 @@ The vague request is rewritten as five questions that the data can answer:
 
 **In scope:** the six HRRP conditions (heart failure, pneumonia, COPD, heart attack, bypass surgery, hip/knee replacement); the FY2026 HRRP program year (performance period 2021-07-01 to 2024-06-30); hospital-level analysis for all hospitals in the CMS files; an illustrative client group of hospitals (see `docs/00_plan.md`), used to answer the "our group" questions.
 
-**Out of scope:** patient-level prediction (the data is hospital-level, not patient-level); causal claims about *why* a hospital has high readmissions; other CMS value-based programs (Value-Based Purchasing, HAC Reduction Program); Medicare Advantage patients, who are not in the HRRP measures for this period.
+**Out of scope:** patient-level prediction (the data is hospital-level, not patient-level); causal claims about *why* a hospital has high readmissions; other CMS value-based programs (Value-Based Purchasing, HAC Reduction Program); Medicare Advantage patients in the FY2026 descriptive analysis (they are not in the HRRP measures for that period; the forward-looking business case includes them under the FY2027+ rules).
 
 ## Important caveat on "our group"
 

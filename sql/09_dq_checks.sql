@@ -197,7 +197,7 @@ checks AS (
     UNION ALL
     SELECT 'S1', 'Scope', 'Maryland hospitals (exempt from HRRP payment cuts) flagged', 'info',
            count(*) FILTER (WHERE is_maryland)::VARCHAR || ' hospitals', 'WARN',
-           'kept for benchmarking, excluded from penalty totals'
+           'kept in the tables; excluded from thresholds, peer sets, segment statistics and penalty totals'
     FROM dim_hospital
     UNION ALL
     SELECT 'S2', 'Scope', 'Payment-eligible hospitals in the analysis', 'info',

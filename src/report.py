@@ -363,9 +363,10 @@ Spending per Beneficiary (calendar 2024) and Hospital General Information. {{ dq
 <details><summary>All automated checks</summary>{{ tables.dq }}</details>
 {% if v %}
 <h3>Validation against CMS's actual FY2026 penalties</h3>
-<p>CMS publishes each hospital's actual payment cut (Table 15) and a supplemental file with peer groups, payment shares and the hidden counts. We used
-these only to test the method. We classify <strong>{{ pct(v.agreement, 1) }}</strong> of hospitals the same way as CMS (penalized: ours
-{{ "{:,}".format(v.ours_penalized) }} vs CMS {{ "{:,}".format(v.cms_penalized) }}), and our estimated cut correlates <strong>r = {{ "%.2f"|format(v.r_pearson) }}</strong>
+<p>CMS publishes each hospital's actual payment cut (Table 15) and a supplemental file with peer groups, payment shares and the hidden counts. We use
+them mainly to test the method (three national inputs come from the same release; see below). We classify <strong>{{ pct(v.agreement, 1) }}</strong> of hospitals the same way as CMS (penalized: ours
+{{ "{:,}".format(v.ours_penalized) }} vs CMS {{ "{:,}".format(v.cms_penalized) }} among the {{ "{:,}".format(v.hospitals_compared) }} hospitals compared;
+CMS's published total is {{ "{:,}".format(kn.fy2026_hospitals_penalized) }}), and our estimated cut correlates <strong>r = {{ "%.2f"|format(v.r_pearson) }}</strong>
 with CMS's actual cut (average among penalized hospitals: ours {{ pct(v.mean_reduction_ours, 2) }} vs CMS {{ pct(v.mean_reduction_cms, 2) }}).
 The relative payment per case by condition comes from the same CMS release (table below), so the cut correlation partly reflects that calibration.
 The penalized/not-penalized agreement does not depend on payments at all.</p>

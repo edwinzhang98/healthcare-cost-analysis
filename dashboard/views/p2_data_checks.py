@@ -42,7 +42,8 @@ md(
   hospitals since the performance period (4 confirmed by exact name match, e.g., Crenshaw Community Hospital is now a critical
   access hospital under a new ID). They are kept in counts but excluded from penalty estimates.
 - **{d['maryland_hospitals']} Maryland hospitals** have scores but are exempt from HRRP payment cuts (state all-payer
-  model). They are kept for benchmarking only.
+  model). They stay in the tables and can be looked up on page 4, but are excluded from thresholds, peer sets and
+  penalty totals.
 - **Hidden counts:** when a hospital had 1–10 readmissions, CMS hides both counts but still publishes the score
   ({d['suppressed_count_rows']:,} rows). We estimate the hidden discharges at the middle of the range the score
   allows. This affects {pct(d['imputed_share_of_discharges'])} of eligible discharges overall but
@@ -85,8 +86,10 @@ if v:
     md(
         """
 CMS publishes each hospital's actual FY2026 payment cut (Table 15) and a supplemental file with the information our
-files lack (peer groups, payment shares, hidden counts). We used them **only to test** our method; nothing in the
-model is fitted to them.
+files lack (peer groups, payment shares, hidden counts). We use them mainly to test our method, but three national
+inputs come from the same release (the six relative payment weights, the 0.9627 neutrality modifier and the 0.133
+payment share), so the correlation of payment cuts is **partly in-sample**. The 97.1% agreement on whether a hospital
+is penalized does not depend on those inputs.
 """
     )
     vpath = ROOT / "data" / "processed" / "cms_validation_hospital.parquet"
@@ -134,7 +137,7 @@ show_data(k.round(3), "Show the fitted values")
 how_to_read(
     """
 - **Join funnel (first chart):** each bar is how many hospitals remain after a step. Among the data steps, the biggest
-  drop (215) is hospitals with no condition scored (too few patients), which can never be penalized. The last bar shows
+  drop (215) is hospitals with no condition scored (too few cases, no cases, or results not available this period), which have no estimated penalty. The last bar shows
   how many of the remaining hospitals our estimate penalizes (2,336 of 2,777).
 - **Stacked bars (second chart):** for each condition, the share of hospitals where CMS published a full result (dark
   blue), only the score with hidden counts (light blue), or no score at all (grays). Hip/knee is mostly light blue:

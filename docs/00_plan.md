@@ -19,7 +19,7 @@ Joined on Facility ID (CMS Certification Number): 3,035 of 3,055 HRRP hospitals 
 3. **National picture and drivers** (notebook 02): excess readmissions and penalty dollars by condition, state, region, ownership, size, star rating and spending. Adjusted associations (regression with hospital-clustered errors), clearly labeled as associations rather than causes.
 4. **Benchmarking** (`benchmarking.md`): target hospital vs peers with the same ownership and size, by condition, with percentiles.
 5. **Penalty exposure:** the HRRP payment formula applied to each hospital (dollars per year, the 3% cap, distance to threshold), plus what-if ERR reductions.
-6. **Business case** (`business_case.md`, notebook 03): program cost vs avoided penalties and readmission costs, from the hospital's and from Medicare's view. Includes a year-by-year phase-in (CMS's 3-year window delays penalty relief), break-even, ±30% sensitivity table, tornado chart, and a Monte Carlo run with a fixed seed.
+6. **Business case** (`business_case.md`, notebook 03): program cost vs avoided penalties and readmission costs, from the hospital's and from Medicare's view. Includes a year-by-year phase-in (CMS's multi-year window, two years from FY2027, delays penalty relief), break-even, ±30% sensitivity table, tornado chart, and a Monte Carlo run with a fixed seed.
 7. **Deliverables:** Streamlit app (7 pages in storyline order), standalone `reports/report.html`, 1-page memo (`docs/readout.md`, `reports/memo.html`), README.
 
 ## "Our group": illustrative client group
@@ -28,12 +28,12 @@ CMS data has no system membership. Client group = **8 New Jersey hospitals**, dr
 ## Design decisions made from the data (details in `docs/assumptions.md`)
 - **Suppressed counts:** CMS hides discharges when readmissions are 1-10 (3,683 rows; 55% of hip/knee volume). Discharges are imputed at the midpoint of the feasible range [25, 10 ÷ predicted rate], with low/high cases kept for sensitivity analysis.
 - **Penalty threshold:** CMS compares each hospital with the median ERR of its dual-eligible peer group, which is not in our data. The national median ERR per condition is used instead, and tested against a threshold of 1.0.
-- **Maryland** (43 hospitals) is exempt from HRRP payment cuts. It is kept for benchmarking but excluded from penalty totals.
+- **Maryland** (43 hospitals) is exempt from HRRP payment cuts. It stays in the tables (and can be looked up as a target hospital) but is excluded from thresholds, peer sets, segment statistics and penalty totals.
 - **Shrinkage:** CMS pulls small hospitals' scores toward average. Measured from the data, only ~20% of a real improvement reaches the score at 100 discharges, vs ~80% at 1,500. The business case uses this pass-through instead of assuming 100%.
 
 ## What we borrow vs what we add
 - **Borrow:** the CMS/QualityNet HRRP methodology (payment formula, peer median, 25-case minimum, 3% cap). KFF's annual HRRP analyses, for the counting conventions (share of hospitals penalized, average penalty) and as published totals to check against. Academic HRRP literature (safety-net penalties, coding, mortality debates, small-hospital shrinkage) for the limitations section.
-- **Add (what public analyses don't do):** penalty dollars per hospital and per condition, peer benchmarking for a chosen hospital, a business case with explicit assumptions and sensitivity, the timing lag created by the 3-year window, shrinkage-aware savings, and a memo for a non-technical audience.
+- **Add (what public analyses don't do):** penalty dollars per hospital and per condition, peer benchmarking for a chosen hospital, a business case with explicit assumptions and sensitivity, the timing lag created by CMS's multi-year window, shrinkage-aware savings, and a memo for a non-technical audience.
 
 ## Risks and how they are handled
 Penalty dollars depend on payment-per-discharge assumptions → every assumption is sourced, varied ±30%, and the national total is compared with CMS's published estimate. Hospital-level data cannot show causes → association language only. Intervention effects in trials shrink at scale → conservative base case, with break-even shown explicitly.

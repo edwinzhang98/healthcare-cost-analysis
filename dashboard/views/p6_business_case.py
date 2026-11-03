@@ -75,13 +75,13 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
         st.radio("How much of a real change reaches the CMS score", ["volume", "full"], key="bc_pass",
                  format_func={"volume": "Depends on hospital volume (measured)", "full": "All of it (naive)"}.get)
         st.slider("How much of today's excess would persist anyway", 30, 100, key="bc_persistence", step=5, format="%d%%",
-                  help="Penalties drift back toward the average: each hospital's actual FY2027 cut was about 0.58 x its FY2026 cut plus a small constant "
+                  help="Penalties drift back toward the average: across hospitals, the actual FY2027 cut was about 0.58 x the FY2026 cut plus a small constant "
                        "(0.16 points), so big cuts shrank and small ones grew. 100% = assume today's penalty simply continues.")
     with d3:
         md("**Money and rules**")
         st.slider("Medicare Advantage share of patients", 0, 80, key="bc_ma_share", step=5, format="%d%%",
                   help="From FY2027, CMS's score counts MA patients, but the penalty applies only to traditional "
-                       "Medicare payments. Set to 0 to reproduce the FY2026 rules.")
+                       "Medicare payments. Set to 0 to see a cohort with no MA patients (the two-year scoring window stays).")
         st.slider("Share of payer savings returned to the hospital", 0, 100, key="bc_hospital_share_of_savings", format="%d%%",
                   step=5, help="Shared-savings / ACO contracts: payers save about the Medicare payment on each "
                                "avoided readmission; this is the share they give back.")

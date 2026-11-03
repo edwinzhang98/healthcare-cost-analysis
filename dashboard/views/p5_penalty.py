@@ -8,8 +8,8 @@ from src import client, penalty as pen
 m = metrics()
 cfg = config()
 page("Penalty Exposure",
-     "How much does each hospital lose to the readmission penalty each year, which conditions drive it, and how much "
-     "would better scores save?")
+     "How much did each hospital lose to the readmission penalty in the FY2026 payment year (our estimate), which "
+     "conditions drove it, and how much would better scores save?")
 
 fct = table("fct_hospital_condition")
 dim = table("dim_hospital")
@@ -166,6 +166,6 @@ how_to_read(
   wage index and case mix); compare hospitals on the payment-cut percentage when in doubt.
 - **Safety-net hospitals:** CMS sets each hospital's threshold from peers with a similar share of low-income patients.
   We use one national threshold, which overstates penalties for hospitals serving many low-income patients
-  (e.g., our estimate for Palisades is 0.87% vs CMS's actual 0.61% in FY2026).
+  (e.g., our estimate for Palisades is 0.82% vs CMS's actual 0.61% in FY2026).
 """
 )
