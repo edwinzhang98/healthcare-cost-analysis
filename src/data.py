@@ -33,7 +33,8 @@ def export_tables() -> None:
     con = connect(read_only=True)
     try:
         for name in EXPORT_TABLES:
-            con.execute(f"COPY {name} TO '{out_dir / (name + '.parquet')}' (FORMAT parquet)")
+            # ORDER BY ALL makes the cached files byte-stable across runs (parallel joins have no fixed order)
+            con.execute(f"COPY (SELECT * FROM {name} ORDER BY ALL) TO '{out_dir / (name + '.parquet')}' (FORMAT parquet)")
     finally:
         con.close()
 

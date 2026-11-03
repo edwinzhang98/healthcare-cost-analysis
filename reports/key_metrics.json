@@ -134,6 +134,17 @@
     "surgical_share_discharges": 0.1297,
     "segments": {
       "Census region": {
+        "Midwest": {
+          "n_hospitals": 662,
+          "mean_err": 0.9972,
+          "ci_low": 0.9942,
+          "ci_high": 1.0002,
+          "share_penalized": 0.8218,
+          "share_discharges": 0.2299,
+          "share_excess_readmissions": 0.2058,
+          "share_penalty": 0.2045,
+          "penalty_per_discharge": 313.25
+        },
         "Northeast": {
           "n_hospitals": 427,
           "mean_err": 1.009,
@@ -155,17 +166,6 @@
           "share_excess_readmissions": 0.3828,
           "share_penalty": 0.3979,
           "penalty_per_discharge": 355.89
-        },
-        "Midwest": {
-          "n_hospitals": 662,
-          "mean_err": 0.9972,
-          "ci_low": 0.9942,
-          "ci_high": 1.0002,
-          "share_penalized": 0.8218,
-          "share_discharges": 0.2299,
-          "share_excess_readmissions": 0.2058,
-          "share_penalty": 0.2045,
-          "penalty_per_discharge": 313.25
         },
         "West": {
           "n_hospitals": 552,
@@ -216,16 +216,16 @@
       },
       "Size": {},
       "Star rating": {
-        "Not rated": {
-          "n_hospitals": 197,
-          "mean_err": 0.9764,
-          "ci_low": 0.9618,
-          "ci_high": 0.9911,
-          "share_penalized": 0.4416,
-          "share_discharges": 0.0135,
-          "share_excess_readmissions": 0.0055,
-          "share_penalty": 0.0106,
-          "penalty_per_discharge": 276.31
+        "1 star": {
+          "n_hospitals": 167,
+          "mean_err": 1.0487,
+          "ci_low": 1.0419,
+          "ci_high": 1.0555,
+          "share_penalized": 0.994,
+          "share_discharges": 0.0447,
+          "share_excess_readmissions": 0.0976,
+          "share_penalty": 0.0917,
+          "penalty_per_discharge": 722.9
         },
         "2 star": {
           "n_hospitals": 562,
@@ -238,17 +238,6 @@
           "share_penalty": 0.2919,
           "penalty_per_discharge": 530.07
         },
-        "4 star": {
-          "n_hospitals": 749,
-          "mean_err": 0.9859,
-          "ci_low": 0.9833,
-          "ci_high": 0.9885,
-          "share_penalized": 0.8171,
-          "share_discharges": 0.2993,
-          "share_excess_readmissions": 0.2094,
-          "share_penalty": 0.2137,
-          "penalty_per_discharge": 251.41
-        },
         "3 star": {
           "n_hospitals": 822,
           "mean_err": 1.0062,
@@ -260,16 +249,16 @@
           "share_penalty": 0.3251,
           "penalty_per_discharge": 379.86
         },
-        "1 star": {
-          "n_hospitals": 167,
-          "mean_err": 1.0487,
-          "ci_low": 1.0419,
-          "ci_high": 1.0555,
-          "share_penalized": 0.994,
-          "share_discharges": 0.0447,
-          "share_excess_readmissions": 0.0976,
-          "share_penalty": 0.0917,
-          "penalty_per_discharge": 722.9
+        "4 star": {
+          "n_hospitals": 749,
+          "mean_err": 0.9859,
+          "ci_low": 0.9833,
+          "ci_high": 0.9885,
+          "share_penalized": 0.8171,
+          "share_discharges": 0.2993,
+          "share_excess_readmissions": 0.2094,
+          "share_penalty": 0.2137,
+          "penalty_per_discharge": 251.41
         },
         "5 star": {
           "n_hospitals": 280,
@@ -281,9 +270,53 @@
           "share_excess_readmissions": 0.0674,
           "share_penalty": 0.067,
           "penalty_per_discharge": 160.05
+        },
+        "Not rated": {
+          "n_hospitals": 197,
+          "mean_err": 0.9764,
+          "ci_low": 0.9618,
+          "ci_high": 0.9911,
+          "share_penalized": 0.4416,
+          "share_discharges": 0.0135,
+          "share_excess_readmissions": 0.0055,
+          "share_penalty": 0.0106,
+          "penalty_per_discharge": 276.31
         }
       },
       "Spending (MSPB)": {
+        "0.95-0.99": {
+          "n_hospitals": 734,
+          "mean_err": 1.0005,
+          "ci_low": 0.9976,
+          "ci_high": 1.0034,
+          "share_penalized": 0.8597,
+          "share_discharges": 0.3045,
+          "share_excess_readmissions": 0.3106,
+          "share_penalty": 0.3064,
+          "penalty_per_discharge": 354.29
+        },
+        "1.00-1.04": {
+          "n_hospitals": 731,
+          "mean_err": 1.0041,
+          "ci_low": 1.0012,
+          "ci_high": 1.0069,
+          "share_penalized": 0.8837,
+          "share_discharges": 0.3358,
+          "share_excess_readmissions": 0.3402,
+          "share_penalty": 0.3507,
+          "penalty_per_discharge": 367.77
+        },
+        "1.05 and above": {
+          "n_hospitals": 576,
+          "mean_err": 1.0121,
+          "ci_low": 1.009,
+          "ci_high": 1.0152,
+          "share_penalized": 0.8889,
+          "share_discharges": 0.1939,
+          "share_excess_readmissions": 0.231,
+          "share_penalty": 0.2212,
+          "penalty_per_discharge": 401.71
+        },
         "Below 0.95": {
           "n_hospitals": 710,
           "mean_err": 0.9908,
@@ -305,53 +338,9 @@
           "share_excess_readmissions": 0.0019,
           "share_penalty": 0.0032,
           "penalty_per_discharge": 394.86
-        },
-        "0.95-0.99": {
-          "n_hospitals": 734,
-          "mean_err": 1.0005,
-          "ci_low": 0.9976,
-          "ci_high": 1.0034,
-          "share_penalized": 0.8597,
-          "share_discharges": 0.3045,
-          "share_excess_readmissions": 0.3106,
-          "share_penalty": 0.3064,
-          "penalty_per_discharge": 354.29
-        },
-        "1.05 and above": {
-          "n_hospitals": 576,
-          "mean_err": 1.0121,
-          "ci_low": 1.009,
-          "ci_high": 1.0152,
-          "share_penalized": 0.8889,
-          "share_discharges": 0.1939,
-          "share_excess_readmissions": 0.231,
-          "share_penalty": 0.2212,
-          "penalty_per_discharge": 401.71
-        },
-        "1.00-1.04": {
-          "n_hospitals": 731,
-          "mean_err": 1.0041,
-          "ci_low": 1.0012,
-          "ci_high": 1.0069,
-          "share_penalized": 0.8837,
-          "share_discharges": 0.3358,
-          "share_excess_readmissions": 0.3402,
-          "share_penalty": 0.3507,
-          "penalty_per_discharge": 367.77
         }
       },
       "Emergency services": {
-        "No emergency dept": {
-          "n_hospitals": 192,
-          "mean_err": 0.9952,
-          "ci_low": 0.9872,
-          "ci_high": 1.0032,
-          "share_penalized": 0.6667,
-          "share_discharges": 0.0436,
-          "share_excess_readmissions": 0.0331,
-          "share_penalty": 0.0366,
-          "penalty_per_discharge": 295.35
-        },
         "Has emergency dept": {
           "n_hospitals": 2585,
           "mean_err": 1.0023,
@@ -362,6 +351,17 @@
           "share_excess_readmissions": 0.9669,
           "share_penalty": 0.9634,
           "penalty_per_discharge": 354.68
+        },
+        "No emergency dept": {
+          "n_hospitals": 192,
+          "mean_err": 0.9952,
+          "ci_low": 0.9872,
+          "ci_high": 1.0032,
+          "share_penalized": 0.6667,
+          "share_discharges": 0.0436,
+          "share_excess_readmissions": 0.0331,
+          "share_penalty": 0.0366,
+          "penalty_per_discharge": 295.35
         }
       }
     },
@@ -689,12 +689,12 @@
       "PALISADES MEDICAL CENTER"
     ],
     "target_penalty_by_condition": {
-      "PN": 9451.0,
-      "HIP_KNEE": 249157.0,
-      "HF": 71477.0,
-      "COPD": 15313.0,
+      "AMI": 38584.0,
       "CABG": 0.0,
-      "AMI": 38584.0
+      "COPD": 15313.0,
+      "HF": 71477.0,
+      "HIP_KNEE": 249157.0,
+      "PN": 9451.0
     },
     "peer_percentiles": [
       {
@@ -803,36 +803,12 @@
       }
     ],
     "benchmark_target": {
-      "PN": {
-        "err": 1.0048,
-        "peer_median": 0.9947,
-        "percentile": 55.4,
-        "n_peers": 704,
-        "status": "In line with peers",
-        "readmissions_vs_peer_median": 0.2
-      },
-      "HIP_KNEE": {
-        "err": 1.3835,
-        "peer_median": 1.0014,
-        "percentile": 98.8,
-        "n_peers": 577,
+      "AMI": {
+        "err": 1.0763,
+        "peer_median": 0.9998,
+        "percentile": 86.4,
+        "n_peers": 689,
         "status": "Worse than most peers",
-        "readmissions_vs_peer_median": 1.1
-      },
-      "HF": {
-        "err": 1.0354,
-        "peer_median": 0.9867,
-        "percentile": 71.2,
-        "n_peers": 704,
-        "status": "In line with peers",
-        "readmissions_vs_peer_median": 2.1
-      },
-      "COPD": {
-        "err": 1.0337,
-        "peer_median": 0.9969,
-        "percentile": 74.9,
-        "n_peers": 702,
-        "status": "In line with peers",
         "readmissions_vs_peer_median": 0.4
       },
       "CABG": {
@@ -843,13 +819,37 @@
         "status": "Too few cases to score",
         "readmissions_vs_peer_median": null
       },
-      "AMI": {
-        "err": 1.0763,
-        "peer_median": 0.9998,
-        "percentile": 86.4,
-        "n_peers": 689,
-        "status": "Worse than most peers",
+      "COPD": {
+        "err": 1.0337,
+        "peer_median": 0.9969,
+        "percentile": 74.9,
+        "n_peers": 702,
+        "status": "In line with peers",
         "readmissions_vs_peer_median": 0.4
+      },
+      "HF": {
+        "err": 1.0354,
+        "peer_median": 0.9867,
+        "percentile": 71.2,
+        "n_peers": 704,
+        "status": "In line with peers",
+        "readmissions_vs_peer_median": 2.1
+      },
+      "HIP_KNEE": {
+        "err": 1.3835,
+        "peer_median": 1.0014,
+        "percentile": 98.8,
+        "n_peers": 577,
+        "status": "Worse than most peers",
+        "readmissions_vs_peer_median": 1.1
+      },
+      "PN": {
+        "err": 1.0048,
+        "peer_median": 0.9947,
+        "percentile": 55.4,
+        "n_peers": 704,
+        "status": "In line with peers",
+        "readmissions_vs_peer_median": 0.2
       }
     },
     "peer_summary_target": {
@@ -1273,13 +1273,13 @@
     ],
     "client": [
       {
-        "facility_id": "310069",
-        "facility_name": "INSPIRA MEDICAL CENTER MULLICA HILL",
-        "size_band": "High volume",
-        "our_estimated_reduction_fy2026": 0.00912,
-        "penalty_est_annual": 373137.34626,
-        "cms_reduction_fy2026": 0.0087,
-        "cms_reduction_fy2027": 0.0023
+        "facility_id": "310003",
+        "facility_name": "PALISADES MEDICAL CENTER",
+        "size_band": "Mid volume",
+        "our_estimated_reduction_fy2026": 0.00825,
+        "penalty_est_annual": 111698.39874,
+        "cms_reduction_fy2026": 0.0061,
+        "cms_reduction_fy2027": 0.0119
       },
       {
         "facility_id": "310010",
@@ -1291,24 +1291,6 @@
         "cms_reduction_fy2027": 0.0004
       },
       {
-        "facility_id": "310061",
-        "facility_name": "VIRTUA WILLINGBORO HOSPITAL",
-        "size_band": "Low volume",
-        "our_estimated_reduction_fy2026": 0.00499,
-        "penalty_est_annual": 42867.7852,
-        "cms_reduction_fy2026": 0.0034,
-        "cms_reduction_fy2027": 0.0012
-      },
-      {
-        "facility_id": "310003",
-        "facility_name": "PALISADES MEDICAL CENTER",
-        "size_band": "Mid volume",
-        "our_estimated_reduction_fy2026": 0.00825,
-        "penalty_est_annual": 111698.39874,
-        "cms_reduction_fy2026": 0.0061,
-        "cms_reduction_fy2027": 0.0119
-      },
-      {
         "facility_id": "310052",
         "facility_name": "OCEAN MEDICAL CENTER",
         "size_band": "High volume",
@@ -1318,13 +1300,22 @@
         "cms_reduction_fy2027": 0.0002
       },
       {
-        "facility_id": "310119",
-        "facility_name": "THE UNIVERSITY HOSPITAL",
+        "facility_id": "310061",
+        "facility_name": "VIRTUA WILLINGBORO HOSPITAL",
         "size_band": "Low volume",
-        "our_estimated_reduction_fy2026": 0.00342,
-        "penalty_est_annual": 11138.66973,
-        "cms_reduction_fy2026": 0.0005,
-        "cms_reduction_fy2027": 0.0005
+        "our_estimated_reduction_fy2026": 0.00499,
+        "penalty_est_annual": 42867.7852,
+        "cms_reduction_fy2026": 0.0034,
+        "cms_reduction_fy2027": 0.0012
+      },
+      {
+        "facility_id": "310069",
+        "facility_name": "INSPIRA MEDICAL CENTER MULLICA HILL",
+        "size_band": "High volume",
+        "our_estimated_reduction_fy2026": 0.00912,
+        "penalty_est_annual": 373137.34626,
+        "cms_reduction_fy2026": 0.0087,
+        "cms_reduction_fy2027": 0.0023
       },
       {
         "facility_id": "310074",
@@ -1343,6 +1334,15 @@
         "penalty_est_annual": 74888.87013,
         "cms_reduction_fy2026": 0.003,
         "cms_reduction_fy2027": 0.0007
+      },
+      {
+        "facility_id": "310119",
+        "facility_name": "THE UNIVERSITY HOSPITAL",
+        "size_band": "Low volume",
+        "our_estimated_reduction_fy2026": 0.00342,
+        "penalty_est_annual": 11138.66973,
+        "cms_reduction_fy2026": 0.0005,
+        "cms_reduction_fy2027": 0.0005
       }
     ]
   }

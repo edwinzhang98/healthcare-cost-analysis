@@ -51,7 +51,7 @@ thresholds = pen.penalty_thresholds(fct, pp.threshold_method)
 
 md("## What if our scores improved?")
 w1, w2 = st.columns([2, 3])
-cut = w1.slider("Lower every selected ERR by (%)", 0, 15, 5, 1,
+cut = w1.slider("Lower every selected ERR by", 0, 15, 5, 1, format="%d%%",
                 help="A 5% lower ERR means 5% fewer readmissions than today relative to expected.") / 100
 conds = w2.multiselect("For these conditions", charts.CONDITION_ORDER, default=charts.CONDITION_ORDER,
                        format_func=lambda c: CONDITION_LABELS[c])

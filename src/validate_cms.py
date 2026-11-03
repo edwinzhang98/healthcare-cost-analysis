@@ -186,6 +186,7 @@ def run() -> dict | None:
           .merge(t26, on="facility_id", how="left").merge(t27, on="facility_id", how="left"))
     cg["cms_reduction_fy2026"] = 1 - cg["cms_paf_fy2026"]
     cg["cms_reduction_fy2027"] = 1 - cg["cms_paf_fy2027"]
+    cg = cg.sort_values("facility_id")
     cg.rename(columns={"payment_reduction_pct": "our_estimated_reduction_fy2026"}).drop(
         columns=["cms_paf_fy2026", "cms_paf_fy2027"]).to_csv(TABLES_DIR / "cms_validation_client.csv", index=False)
 
