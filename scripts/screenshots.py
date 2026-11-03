@@ -44,6 +44,11 @@ def main() -> None:
             for path, name in PAGES:
                 page.goto(f"http://127.0.0.1:{port}/{path}", wait_until="networkidle")
                 page.wait_for_selector("h1", timeout=60_000)
+                # wait until the page script has drawn its content (a chart or table) and stopped running
+                page.wait_for_selector(".js-plotly-plot, [data-testid='stDataFrame'], [data-testid='stTable']",
+                                       timeout=60_000)
+                page.wait_for_function("() => !document.querySelector('[data-testid=\"stStatusWidget\"]')",
+                                       timeout=60_000)
                 page.wait_for_timeout(4500)            # let plotly finish drawing
                 page.screenshot(path=str(OUT / f"{name}.png"))
                 print("saved", OUT / f"{name}.png")
