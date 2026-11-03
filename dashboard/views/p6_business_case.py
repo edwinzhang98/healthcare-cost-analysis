@@ -75,7 +75,7 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
         st.radio("How much of a real change reaches the CMS score", ["volume", "full"], key="bc_pass",
                  format_func={"volume": "Depends on hospital volume (measured)", "full": "All of it (naive)"}.get)
         st.slider("How much of today's excess would persist anyway", 30, 100, key="bc_persistence", step=5, format="%d%%",
-                  help="Penalties regress toward the mean: on average CMS's actual FY2027 cuts were ~58% the size of the FY2026 "
+                  help="Penalties drift back toward the average: each hospital's actual FY2027 cut was about 0.58 x its FY2026 cut plus a small constant "
                        "cuts. 100% = assume today's penalty simply continues.")
     with d3:
         md("**Money and rules**")
@@ -115,15 +115,15 @@ payback = analysis.years_to_payback(ph)
 kpis([
     ("Program cost per year", money(t["program_cost"]), f"{t['enrollees']:,.0f} patients enrolled · {t['n_hospitals_running']} hospitals"),
     ("Penalty avoided per year", money(t["avoided_penalty"]),
-     f"steady state (FY2031+) · expected penalty without program {money(t['penalty_before'])} (FY2026 est. {money(t['penalty_today'])})"),
+     f"full strength (FY2032+) · expected penalty without program {money(t['penalty_before'])} (FY2026 est. {money(t['penalty_today'])})"),
     ("Readmissions avoided per year", f"{t['readmissions_avoided']:,.0f}", f"program cost per readmission avoided {money(t['cost_per_readmission_avoided'])}"),
     ("Hospital net per year", money(t["hospital_net"]), f"payback: {payback}"),
-    ("Whole-system net per year", money(t["combined_net"]), "patients + payers + hospital"),
+    ("Whole-system net per year", money(t["combined_net"]), "payers and hospital together"),
 ])
 
 st.caption(f"Per avoided readmission: payers save about {money(p.payment_per_readmission)} (Medicare payment); the hospital "
            f"loses that payment but saves {money(p.variable_cost_per_readmission)} of variable cost, so it loses "
-           f"{money(p.lost_margin_per_readmission)} of margin; patients, payers and hospital together save "
+           f"{money(p.lost_margin_per_readmission)} of margin; payers and hospital together save "
            f"{money(p.variable_cost_per_readmission)}.".replace("$", "&#36;"), unsafe_allow_html=True)
 if True:
     chart(charts.waterfall(
@@ -200,7 +200,7 @@ how_to_read(
 - **Two views of the same program.** *Hospital net* is what the hospital's P&L sees: avoided penalties, plus any
   readmission savings it keeps under risk contracts, minus the margin it loses when a fee-for-service readmission
   doesn't happen, minus program cost. *Whole-system net* asks whether the program is a good use of money for
-  patients, payers and the hospital together: readmission costs avoided minus program cost. (The penalty is money
+  payers and the hospital together: readmission costs avoided minus program cost (patients' health gains are real but not counted in dollars). (The penalty is money
   moving from the hospital to Medicare, so it cancels out in the whole-system view.)
 - **Expected penalty without the program:** penalties regress toward the mean (page 5), so the starting point is a
   forecast that keeps half of today's excess above average, not today's penalty. That is why the expected penalty is
@@ -209,7 +209,7 @@ how_to_read(
   fully running. "Each $1 returns $X" is the benefit-cost ratio: below $1.00 the program loses money for the hospital.
 - **Year-by-year chart:** costs start on day one, but CMS scores hospitals on a rolling 2-year window that ends 15
   months before each payment year. So a program that starts in January 2027 first touches penalties in FY2029
-  (October 2028), and is fully counted only from FY2031. The black line is the running total.
+  (October 2028), and reaches full strength only in FY2032 (FY2031 already gets about 88%). The black line is the running total.
 - **Tornado:** each bar shows how far the yearly result moves when one input is 30% lower (orange) or higher (blue).
   Long bars are the assumptions worth pinning down in a pilot. If a bar crosses the red line, that input alone can
   flip the answer.

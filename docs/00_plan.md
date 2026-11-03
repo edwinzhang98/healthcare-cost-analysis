@@ -23,7 +23,7 @@ Joined on Facility ID (CMS Certification Number): 3,035 of 3,055 HRRP hospitals 
 7. **Deliverables:** Streamlit app (7 pages in storyline order), standalone `reports/report.html`, 1-page memo (`docs/readout.md`, `reports/memo.html`), README.
 
 ## "Our group": illustrative client group
-CMS data has no system membership. Client group = **8 New Jersey hospitals**, drawn at random (seed 42) from payment-eligible NJ hospitals with ≥ 3 reported conditions, stratified 3 large / 3 medium / 2 small (`src/client.py`, `config.yaml`). NJ was chosen because it has the 2nd-highest average ERR among 51 states, and 93% of its hospitals are penalized, which is a realistic setting for the VP's problem. Massachusetts ranks 1st but has no small hospitals that qualify. **Not an actual health system.** The dashboard works for any hospital or group.
+CMS data has no system membership. Client group = **8 New Jersey hospitals**, drawn at random (seed 42) from payment-eligible NJ hospitals with ≥ 3 reported conditions, stratified 3 large / 3 medium / 2 small (`src/client.py`, `config.yaml`). NJ was chosen because it has the 2nd-highest average ERR among 50 (49 states plus DC; Maryland is exempt), and 93% of its hospitals are penalized, which is a realistic setting for the VP's problem. Massachusetts ranks 1st but has no small hospitals that qualify. **Not an actual health system.** The dashboard works for any hospital or group.
 
 ## Design decisions made from the data (details in `docs/assumptions.md`)
 - **Suppressed counts:** CMS hides discharges when readmissions are 1-10 (3,683 rows; 55% of hip/knee volume). Discharges are imputed at the midpoint of the feasible range [25, 10 ÷ predicted rate], with low/high cases kept for sensitivity analysis.

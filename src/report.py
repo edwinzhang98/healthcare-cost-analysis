@@ -195,8 +195,8 @@ def build() -> None:
     if pers and ppath.exists():
         figs["persist"] = _fig(charts.persistence_scatter(
             pd.read_parquet(ppath), pers["slope_fy2027_on_fy2026"],
-            f"A hospital's penalty one year predicts only part of the next (on average FY2027 cuts were ~{pers['slope_fy2027_on_fy2026']:.0%} the size of FY2026's)",
-            "CMS actual payment cut by hospital, FY2026 vs FY2027 (Table 15)"))
+            "Penalties drift back toward the average: big FY2026 cuts shrank in FY2027, small ones grew",
+            "CMS actual payment cut by hospital, FY2026 vs FY2027 (Table 15). Red line: FY2027 cut ≈ 0.58 × FY2026 cut + 0.16 points"))
     ps = pd.DataFrame(nat["penalty_sensitivity"])
     tables["pen_sens"] = _table(ps.rename(columns={"scenario": "Assumption", "n_hospitals_penalized": "Hospitals penalized",
                                                    "total_penalty": "National penalty $/yr", "client_penalty": "Client group $/yr"}),
@@ -261,7 +261,8 @@ def build() -> None:
         ("Fixed cost per hospital", f"${params['fixed_cost_per_hospital']:,.0f}/yr (program oversight and reporting)"),
         ("Medicare Advantage share", f"{params['ma_share']:.0%} (New Jersey 2025); counts in the score from FY2027, not in the penalty base"),
         ("Persistence of today's excess", f"{params['persistence']:.0%} (regression to the mean; CMS FY2026→FY2027 slope 0.58)"),
-        ("Cost of a readmission", f"${params['cost_per_readmission']:,.0f} (HCUP 2020, inflated to 2025)"),
+        ("Cost of a readmission", f"${params['cost_per_readmission']:,.0f} (2025 $; between HCUP's Medicare readmission costs by condition, "
+                                  "$16K–$19K, and its all-condition 2020 average, about $21K)"),
         ("Money per avoided readmission", f"payers save ${p_tgt.payment_per_readmission:,.0f}; hospital loses ${p_tgt.lost_margin_per_readmission:,.0f} of margin; system saves ${p_tgt.variable_cost_per_readmission:,.0f} (MedPAC)"),
         ("Program start / horizon", f"{cfg['intervention']['program_start']}, half strength in year 1; FY2027–FY2032; 7% discount rate"),
     ]
@@ -276,8 +277,8 @@ def build() -> None:
     ])
     figs["options"] = _fig(charts.options_chart(
         opts, "Only the pilot with payer co-funding breaks even for the hospital",
-        "Net value per year once the program is fully counted (FY2031+), base-case assumptions; blue = hospital P&L, "
-        "aqua = patients, payers and hospital together"))
+        "Net value per year once the program is at full strength (FY2032+), base-case assumptions; blue = hospital P&L, "
+        "aqua = payers and hospital together"))
 
     recs = recommendations.build(m)
     finds = recommendations.findings(m)
@@ -438,6 +439,7 @@ between Medicare and the hospital, so they cancel out.</p>
 {% for r in recs %}<div class="rec"><div class="t">{{ loop.index }}. {{ md(r.what) }}</div><div class="g">
 <div><strong>Owner:</strong> {{ md(r.who) }}</div><div><strong>Expected impact:</strong> {{ md(r.impact) }}</div>
 <div><strong>How we measure it:</strong> {{ md(r.measure) }}</div><div><strong>Risk:</strong> {{ md(r.risk) }}</div></div></div>{% endfor %}
+<p class="note">Owners are illustrative roles: the eight hospitals are an illustrative group, not an actual health system, and no existing staff or contracts are implied.</p>
 
 <h2 id="limits">9. Limitations and next steps</h2>
 <ul>

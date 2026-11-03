@@ -18,8 +18,8 @@ opts = pd.DataFrame([
 ])
 chart(charts.options_chart(
     opts, "Only the pilot with payer co-funding breaks even for the hospital",
-    "Net value per year once the program is fully counted (FY2031+), base-case assumptions; blue = hospital P&L, "
-    "aqua = patients, payers and hospital together"), key="opts")
+    "Net value per year once the program is at full strength (FY2032+), base-case assumptions; blue = hospital P&L, "
+    "aqua = payers and hospital together"), key="opts")
 
 recs = recommendations.build(m)
 for i, r in enumerate(recs, 1):
@@ -28,6 +28,8 @@ for i, r in enumerate(recs, 1):
         c1, c2 = st.columns(2)
         c1.markdown(esc(f"**Owner:** {r['who']}  \n**Expected impact:** {r['impact']}"), unsafe_allow_html=True)
         c2.markdown(esc(f"**How we measure it:** {r['measure']}  \n**Risk:** {r['risk']}"), unsafe_allow_html=True)
+st.caption("Owners are illustrative roles: the eight hospitals are an illustrative group, not an actual health system, "
+           "and no existing staff or contracts are implied.")
 
 md("## How we will know the pilot worked")
 md(
@@ -76,7 +78,7 @@ md(
 how_to_read(
     """
 - **Chart:** each pair of bars is one way to run the program. Blue is what the hospital's books see each year once the
-  program is fully counted; aqua is the value to patients, payers and the hospital together. Bars to the left of the
+  program is fully counted; aqua is the value to payers and the hospital together (patients' health gains are not counted in dollars). Bars to the left of the
   line lose money. The broad program loses money in both views; the pilot is close to break-even and turns positive
   for the hospital only if payers share part of their savings.
 - **Cards:** each card is one recommendation in a standard format: **what** to do, **who** owns it, the **expected

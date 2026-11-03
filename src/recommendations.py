@@ -38,7 +38,9 @@ def findings(m: dict) -> list[str]:
     ps = peer_summary(m)
     top2 = [h["name"] for h in cl["hospitals"][:2]]
     v = m.get("validation") or {}
-    pers = (v.get("persistence") or {}).get("slope_fy2027_on_fy2026")
+    pv = v.get("persistence") or {}
+    pers = pv.get("slope_fy2027_on_fy2026")
+    pers_top = (pv.get("top_decile_mean_cut_fy2026"), pv.get("top_decile_mean_cut_fy2027"))
     return [
         (f"**Where the penalty comes from.** We estimate the group loses about {money(cl['total_penalty'])} a year to the "
          f"readmission penalty (FY2026 program). Two hospitals, {_short(top2[0])} and {_short(top2[1])}, carry "
@@ -50,16 +52,16 @@ def findings(m: dict) -> list[str]:
          f"and COPD at {ps['pn_worse']} hospitals each; hip/knee at {_short(cl['target_hospital_name'])}. Part of this is "
          f"regional: New Jersey has the second-highest average readmission ratio of any state."),
         (f"**What a follow-up program can recover.** Less than it costs. Group-wide it would cost about "
-         f"{money(broad['program_cost'])} a year and avoid about {money(broad['avoided_penalty'])} in penalties once fully "
-         f"counted (FY2031), about {cents(broad['benefit_cost_ratio'])} per $1; it cannot break even at any plausible "
+         f"{money(broad['program_cost'])} a year and avoid about {money(broad['avoided_penalty'])} in penalties at full "
+         f"strength (FY2032), about {cents(broad['benefit_cost_ratio'])} per $1; it cannot break even at any plausible "
          f"effect size. Even at the two best-placed hospitals it returns about {cents(pilot['benefit_cost_ratio'])} per $1 "
          f"(hospital net {money(pilot['hospital_net'])} a year). The pilot breaks even only if it cuts readmissions by at "
          f"least {pct(be['pilot_relative_reduction'])} (recent trials: about 10%), costs under "
          f"{money(be['pilot_cost_per_enrollee'])} per patient, or payers return about "
          f"{pct(be['pilot_hospital_share_of_savings'])} of their savings. Across {mc['runs']:,} simulated scenarios it pays "
          f"for itself for the hospital {pct(mc['p_hospital_net_positive'])} of the time. Penalties are also a moving target"
-         + (f": on average, FY2027 cuts were about {pers:.0%} the size of FY2026's, with large swings hospital by hospital."
-            if pers else ".")),
+         + (f": they drift back toward the average, so hospitals with the biggest FY2026 cuts saw them shrink by about "
+            f"{1 - pers_top[1] / pers_top[0]:.0%} in FY2027 while small cuts grew." if pers else ".")),
     ]
 
 
@@ -82,8 +84,8 @@ def build(m: dict) -> list[dict]:
             "what": "Do not fund a group-wide post-discharge follow-up program on financial grounds.",
             "who": "VP of Quality and CFO (budget decision)",
             "impact": (f"Avoids about {money(broad['program_cost'])} a year of spending that would recover about "
-                       f"{money(broad['avoided_penalty'])} in penalties from FY2031 (about {cents(broad['benefit_cost_ratio'])} per $1). "
-                       f"Even counting the readmission costs saved by patients and payers it loses "
+                       f"{money(broad['avoided_penalty'])} in penalties a year at full strength (FY2032; about {cents(broad['benefit_cost_ratio'])} per $1). "
+                       f"Even counting the readmission costs saved by payers it loses "
                        f"{money(-broad['combined_net'])} a year."),
             "measure": "Revisit after the pilot readout.",
             "risk": "Patients at the other hospitals don't get the program for now. Readmissions are a quality issue, not only a cost.",
@@ -97,20 +99,24 @@ def build(m: dict) -> list[dict]:
                      f"barely move (see the hip/knee item)."),
             "who": "Chief nursing officers and care-management leads at the two hospitals",
             "impact": (f"About {money(pilot['program_cost'])} a year for about {pilot['readmissions_avoided']:.0f} fewer "
-                       f"readmissions and about {money(pilot['avoided_penalty'])} a year less penalty once fully counted "
-                       f"(FY2031). On base assumptions it still loses about {money(-pilot['hospital_net'])} a year for the "
+                       f"readmissions and about {money(pilot['avoided_penalty'])} a year less penalty at full strength "
+                       f"(FY2032). On base assumptions it still loses about {money(-pilot['hospital_net'])} a year for the "
                        f"hospital, and nothing comes back before late 2028."),
-            "measure": (f"Monthly: cost per enrolled patient (expand only if under {money(be['pilot_cost_per_enrollee'])}) and "
-                        f"share of patients seen within 7 days. Readmissions of enrolled vs similar non-enrolled patients, "
-                        f"pooled across both hospitals and judged at 24 months. About {pw['enrolled_first_24_months']:.0f} "
-                        f"patients in two years cannot prove a {pct(be['pilot_relative_reduction'])} effect (that needs about "
-                        f"{pw['n_per_group_for_break_even_effect']:,.0f} per group), so the decision rests on cost, delivery and "
-                        f"the direction of the result, read alongside published trials."),
+            "measure": (f"Month 12 (stop or continue): at least 80% of enrolled patients get all three steps, cost stays at "
+                        f"or under $400 per patient, and ED visits, observation stays and deaths do not rise against a "
+                        f"comparison group. Month 24 (keep or stop): readmissions among enrolled patients, pooled across both "
+                        f"hospitals, fall about 16% (the pooled equivalent of the {pct(be['pilot_relative_reduction'])} break-even) at $400 per "
+                        f"patient, or about 12% with at least "
+                        f"{pct(be['pilot_hospital_share_of_savings'])} payer co-funding or a cost at or under "
+                        f"{money(be['pilot_cost_per_enrollee'])}. About {pw['enrolled_first_24_months']:.0f} patients cannot "
+                        f"prove such an effect statistically (that needs about {pw['n_per_group_for_break_even_effect']:,.0f} "
+                        f"per group), so read the result alongside published trials."),
             "risk": ("Program effects usually shrink outside trials; CMS scores react only after two years and swing from "
                      "year to year; a before-and-after comparison would credit the program with natural improvement."),
         },
         {
-            "what": "Ask Medicare Advantage plans and our ACO to co-fund the pilot through shared savings, and sign terms first.",
+            "what": ("Ask the Medicare Advantage plans and ACO partners the group contracts with to co-fund the pilot "
+                     "through shared savings, and sign terms first."),
             "who": "CFO and managed-care contracting",
             "impact": (f"Payers save about {money(payer_saving(m))} per avoided readmission. If about "
                        f"{pct(be['pilot_hospital_share_of_savings'])} comes back to us, the pilot breaks even "

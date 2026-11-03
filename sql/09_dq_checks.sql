@@ -189,7 +189,7 @@ checks AS (
                 THEN 'PASS' ELSE 'FAIL' END, 'IDs are read as text to keep leading zeros'
     FROM hrrp_hosp
     UNION ALL
-    SELECT 'F2', 'Format', 'HRRP IDs fall in the short-term hospital number range (last 4 digits 0001-0899)',
+    SELECT 'F2', 'Format', 'HRRP IDs fall in the IPPS hospital range (last 4 digits 0001-0879 short-term, 0880-0899 demonstration)',
            '0 outside', count(*) FILTER (WHERE substr(facility_id, 3, 4)::INT NOT BETWEEN 1 AND 899)::VARCHAR || ' outside',
            CASE WHEN count(*) FILTER (WHERE substr(facility_id, 3, 4)::INT NOT BETWEEN 1 AND 899) = 0
                 THEN 'PASS' ELSE 'FAIL' END, ''

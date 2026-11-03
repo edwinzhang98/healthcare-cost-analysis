@@ -134,9 +134,10 @@ show_data(k.round(3), "Show the fitted values")
 
 how_to_read(
     """
-- **Join funnel (left chart):** each bar is how many hospitals survive a step of the data preparation. The biggest drop
-  is hospitals with no condition scored (too few patients), which can never be penalized.
-- **Stacked bars (right chart):** for each condition, the share of hospitals where CMS published a full result (dark
+- **Join funnel (first chart):** each bar is how many hospitals remain after a step. Among the data steps, the biggest
+  drop (215) is hospitals with no condition scored (too few patients), which can never be penalized. The last bar shows
+  how many of the remaining hospitals our estimate penalizes (2,336 of 2,777).
+- **Stacked bars (second chart):** for each condition, the share of hospitals where CMS published a full result (dark
   blue), only the score with hidden counts (light blue), or no score at all (grays). Hip/knee is mostly light blue:
   readmissions after joint replacement are rare (≈5%), so counts are often below CMS's privacy threshold.
 - **Checks table:** PASS = matches what we expected; WARN = a known limitation we work around and document; FAIL =

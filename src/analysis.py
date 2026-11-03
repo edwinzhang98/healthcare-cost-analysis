@@ -338,7 +338,7 @@ def build() -> dict:
         {"check_id": "P3", "category": "Known numbers", "check_name": "Estimated national penalty $ vs nearest CMS published totals ($316M-$361M)",
          "expected": "same order of magnitude", "actual": f"${ph['penalty_est_annual'].sum() / 1e6:,.0f}M",
          "status": "PASS" if 0.6 * kn["fy2026_total_penalty_reference_low"] <= ph["penalty_est_annual"].sum() <= 1.4 * kn["fy2026_total_penalty_reference_high"] else "WARN",
-         "detail": "CMS did not publish an FY2026 dollar total; our payment assumptions are conservative (see assumptions A4)"},
+         "detail": "CMS did not publish an FY2026 dollar total; our payment assumptions are conservative (see assumptions B3)"},
         {"check_id": "P4", "category": "Reproducibility", "check_name": "Client group draw reproduces config.yaml (seed 42)",
          "expected": "True", "actual": str(client.check_client_group(dim)), "status": "PASS" if client.check_client_group(dim) else "FAIL",
          "detail": "8 hospitals, stratified by size"},
