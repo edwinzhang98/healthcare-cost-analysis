@@ -14,7 +14,14 @@ body{margin:0;background:#fcfcfb;color:#0b0b0b;font:15px/1.5 system-ui,-apple-sy
 h1{font-size:22px;margin:0 0 4px} h2{font-size:16px;margin:20px 0 6px} p,li{margin:5px 0}
 table{border-collapse:collapse;width:100%;font-size:13.5px;margin:8px 0} th,td{border-bottom:1px solid #e1e0d9;padding:5px 6px;text-align:left;vertical-align:top}
 th{color:#52514e} em{color:#52514e} hr{border:0;border-top:1px solid #e1e0d9;margin:14px 0}
-@media print{body{background:#fff}.page{padding:0;max-width:none}}
+@media print{
+  @page{size:Letter;margin:0.55in}
+  body{background:#fff;font-size:10.5pt;line-height:1.33}
+  .page{padding:0;max-width:none}
+  h1{font-size:15pt;margin:0 0 2pt} h2{font-size:11.5pt;margin:9pt 0 3pt}
+  p,li{margin:2.5pt 0} ul,ol{margin:3pt 0;padding-left:16pt}
+  table{font-size:8.8pt;margin:4pt 0} th,td{padding:2.5pt 4pt}
+}
 """
 
 

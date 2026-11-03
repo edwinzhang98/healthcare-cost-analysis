@@ -95,7 +95,7 @@ pers = v.get("persistence") or {}
 if pers_path.exists() and pers:
     chart(charts.persistence_scatter(
         pd.read_parquet(pers_path), pers["slope_fy2027_on_fy2026"],
-        f"A hospital's penalty one year predicts only part of the next (FY2027 kept ~{pers['slope_fy2027_on_fy2026']:.0%} of FY2026)",
+        f"A hospital's penalty one year predicts only part of the next (on average FY2027 cuts were ~{pers['slope_fy2027_on_fy2026']:.0%} the size of FY2026's)",
         "CMS actual payment cut by hospital, FY2026 vs FY2027 (Table 15). FY2027 also switched to a 2-year window that "
         "includes Medicare Advantage patients."), key="pers")
     md(f"""

@@ -195,7 +195,7 @@ def build() -> None:
     if pers and ppath.exists():
         figs["persist"] = _fig(charts.persistence_scatter(
             pd.read_parquet(ppath), pers["slope_fy2027_on_fy2026"],
-            f"A hospital's penalty one year predicts only part of the next (FY2027 kept ~{pers['slope_fy2027_on_fy2026']:.0%} of FY2026)",
+            f"A hospital's penalty one year predicts only part of the next (on average FY2027 cuts were ~{pers['slope_fy2027_on_fy2026']:.0%} the size of FY2026's)",
             "CMS actual payment cut by hospital, FY2026 vs FY2027 (Table 15)"))
     ps = pd.DataFrame(nat["penalty_sensitivity"])
     tables["pen_sens"] = _table(ps.rename(columns={"scenario": "Assumption", "n_hospitals_penalized": "Hospitals penalized",

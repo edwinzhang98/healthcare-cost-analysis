@@ -41,7 +41,7 @@ if True:
 md(
     f"""
 - **20 hospitals don't match** Hospital General Information: they closed, merged, or converted to critical access
-  hospitals since the performance period (3 confirmed by name, e.g., Crenshaw Community Hospital is now a critical
+  hospitals since the performance period (4 confirmed by exact name match, e.g., Crenshaw Community Hospital is now a critical
   access hospital under a new ID). They are kept in counts but excluded from penalty estimates.
 - **{d['maryland_hospitals']} Maryland hospitals** have scores but are exempt from HRRP payment cuts (state all-payer
   model). They are kept for benchmarking only.

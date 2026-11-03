@@ -119,6 +119,51 @@ def client_peer_grid(hc: pd.DataFrame, dim: pd.DataFrame, ph: pd.DataFrame) -> l
     return out
 
 
+def pilot_unit_economics(m: cm.ModelInputs, p: cm.ProgramParams) -> dict:
+    """Per avoided readmission: what the program costs vs what comes back (steady state)."""
+    t = cm.evaluate(m, p)["totals"]
+    n = t["readmissions_avoided"]
+    return {"program_cost_per_readmission_avoided": _r(t["program_cost"] / n, 0),
+            "penalty_relief_per_readmission_avoided": _r(t["avoided_penalty"] / n, 0),
+            "payer_saving_per_readmission_avoided": _r(p.payment_per_readmission, 0),
+            "lost_margin_per_readmission_avoided": _r(p.lost_margin_per_readmission, 0)}
+
+
+def pilot_power(m: cm.ModelInputs, p: cm.ProgramParams, break_even_effect: float | None) -> dict:
+    """Can a pilot of this size show the effect it needs? Two-group comparison of 30-day readmission
+    (enrolled vs similar non-enrolled patients), 80% power, two-sided 5% test, equal group sizes."""
+    from scipy.stats import norm
+    res = cm.evaluate(m, p)
+    rows = res["rows"][res["rows"]["targeted"]].copy()
+    rows["effect"] = p.condition_effect(rows["condition_code"].to_numpy())
+    rows["p0"] = rows["readmissions_avoided"] / (rows["enrollees"] * rows["effect"])   # baseline risk of enrollees
+    w = rows["enrollees"]
+    p0 = float((rows["p0"] * w).sum() / w.sum())
+    base_rel = float((rows["effect"] * rows["p0"] * w).sum() / (rows["p0"] * w).sum())
+    z = norm.ppf(0.975) + norm.ppf(0.80)
+
+    def n_per_group(rel):
+        p1 = p0 * (1 - rel)
+        return float(z ** 2 * (p0 * (1 - p0) + p1 * (1 - p1)) / (p0 - p1) ** 2)
+
+    def mde(n):
+        lo, hi = 0.0, 0.99
+        for _ in range(60):
+            mid = (lo + hi) / 2
+            lo, hi = (mid, hi) if n_per_group(mid) > n else (lo, mid)
+        return (lo + hi) / 2
+    per_year = float(res["totals"]["enrollees"])
+    ramp = load_config()["intervention"]["ramp_first_year"]
+    n12, n24 = per_year * ramp, per_year * (ramp + 1)
+    be_rel = base_rel * (break_even_effect / p.relative_reduction) if break_even_effect else None
+    return {"enrollees_per_year_steady": _r(per_year, 0), "enrolled_first_12_months": _r(n12, 0),
+            "enrolled_first_24_months": _r(n24, 0), "baseline_readmission_risk_enrolled": _r(p0, 3),
+            "base_case_relative_reduction": _r(base_rel, 3),
+            "n_per_group_for_base_effect": _r(n_per_group(base_rel), 0),
+            "n_per_group_for_break_even_effect": _r(n_per_group(be_rel), 0) if be_rel else None,
+            "min_detectable_reduction_12m": _r(mde(n12), 3), "min_detectable_reduction_24m": _r(mde(n24), 3)}
+
+
 def years_to_payback(df: pd.DataFrame, col: str = "hospital_net_cum") -> str:
     pos = df[df[col] > 0]
     return f"FY{int(pos['fiscal_year'].iloc[0])}" if len(pos) else f"not within FY{int(df['fiscal_year'].max())}"
@@ -255,6 +300,7 @@ def build() -> dict:
         "broad_relative_reduction": cm.break_even(m_client, p_broad, "relative_reduction", lo=0.0, hi=0.6),
         "broad_cost_per_enrollee": cm.break_even(m_client, p_broad, "cost_per_enrollee", lo=0.0, hi=3000.0),
         "pilot_relative_reduction_combined": cm.break_even(m_pilot, p_tgt, "relative_reduction", "combined_net", 0.0, 0.6),
+        "pilot_hospital_share_of_savings": cm.break_even(m_pilot, p_tgt, "hospital_share_of_savings", lo=0.0, hi=1.0),
     }
     g = cm.grid(m_pilot, p_tgt, "relative_reduction", np.round(np.arange(0.02, 0.305, 0.02), 3),
                 "cost_per_enrollee", np.arange(100, 1001, 50))
@@ -393,6 +439,8 @@ def build() -> dict:
             "scenarios": {k_: {kk: _r(vv, 2) if not isinstance(vv, str) else vv for kk, vv in row.items()}
                           for k_, row in sc.to_dict(orient="index").items()},
             "break_even": {k_: _r(v) for k_, v in be.items()},
+            "pilot_unit_economics": pilot_unit_economics(m_pilot, p_tgt),
+            "pilot_power": pilot_power(m_pilot, p_tgt, be["pilot_relative_reduction"]),
             "monte_carlo": {"runs": int(len(mc)), "seed": seed,
                             "p_hospital_net_positive": _r((mc["hospital_net"] > 0).mean(), 3),
                             "p_combined_net_positive": _r((mc["combined_net"] > 0).mean(), 3),

@@ -1,6 +1,6 @@
 # 01 · Request and scope
 
-## The request (verbatim)
+## The request (as received, with English translation)
 
 > **From:** VP of Quality, hospital group
 >

@@ -75,7 +75,7 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
         st.radio("How much of a real change reaches the CMS score", ["volume", "full"], key="bc_pass",
                  format_func={"volume": "Depends on hospital volume (measured)", "full": "All of it (naive)"}.get)
         st.slider("How much of today's excess would persist anyway", 30, 100, key="bc_persistence", step=5, format="%d%%",
-                  help="Penalties regress toward the mean: CMS's actual FY2027 cuts kept only ~58% of the FY2026 "
+                  help="Penalties regress toward the mean: on average CMS's actual FY2027 cuts were ~58% the size of the FY2026 "
                        "cuts. 100% = assume today's penalty simply continues.")
     with d3:
         md("**Money and rules**")

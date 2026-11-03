@@ -1065,7 +1065,25 @@
       "pilot_cost_per_enrollee": 235.87,
       "broad_relative_reduction": null,
       "broad_cost_per_enrollee": 7.7747,
-      "pilot_relative_reduction_combined": 0.1178
+      "pilot_relative_reduction_combined": 0.1178,
+      "pilot_hospital_share_of_savings": 0.2671
+    },
+    "pilot_unit_economics": {
+      "program_cost_per_readmission_avoided": 17900.0,
+      "penalty_relief_per_readmission_avoided": 15120.0,
+      "payer_saving_per_readmission_avoided": 16948.0,
+      "lost_margin_per_readmission_avoided": 1748.0
+    },
+    "pilot_power": {
+      "enrollees_per_year_steady": 201.0,
+      "enrolled_first_12_months": 100.0,
+      "enrolled_first_24_months": 301.0,
+      "baseline_readmission_risk_enrolled": 0.313,
+      "base_case_relative_reduction": 0.116,
+      "n_per_group_for_base_effect": 2480.0,
+      "n_per_group_for_break_even_effect": 1250.0,
+      "min_detectable_reduction_12m": 0.522,
+      "min_detectable_reduction_24m": 0.319
     },
     "monte_carlo": {
       "runs": 2000,
