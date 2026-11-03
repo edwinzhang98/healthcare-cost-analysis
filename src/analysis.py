@@ -312,7 +312,7 @@ def build() -> dict:
     pen_h = ph[ph["is_penalized"]]
     bt = bench.set_index("condition_code")
     by_dim = {}
-    for d in ["Census region", "Ownership", "Size", "Star rating", "Spending (MSPB)", "Emergency services"]:
+    for d in ["Census region", "Ownership", "Volume", "Star rating", "Spending (MSPB)", "Emergency services"]:
         st = drivers.segment_table(seg, d)
         by_dim[d] = {r.segment_value: {"n_hospitals": int(r.n_hospitals), "mean_err": _r(r.mean_err),
                                        "ci_low": _r(r.mean_err_ci_low), "ci_high": _r(r.mean_err_ci_high),

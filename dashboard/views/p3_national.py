@@ -27,7 +27,7 @@ cond_opts = ["ALL"] + charts.CONDITION_ORDER
 cond = f1.selectbox("Condition", cond_opts, format_func=lambda c: "All six conditions" if c == "ALL" else CONDITION_LABELS[c])
 metric_label = f2.selectbox("Map shows", ["Average ERR", "Share of hospitals above the penalty threshold",
                                           "Penalty dollars per eligible discharge"])
-dim_label = f3.selectbox("Compare hospitals by", ["Ownership", "Size", "Census region", "Star rating",
+dim_label = f3.selectbox("Compare hospitals by", ["Ownership", "Volume", "Census region", "Star rating",
                                                   "Spending (MSPB)", "Emergency services"])
 cond_name = "all six conditions" if cond == "ALL" else CONDITION_LABELS[cond].lower()
 
@@ -76,7 +76,7 @@ show_data(cs_view, "Show penalty per extra readmission by condition")
 # ---------------------------------------------------------------- segments
 md(f"## By {dim_label.lower()}")
 orders = {
-    "Size": ["Small", "Medium", "Large"],
+    "Volume": ["Low volume", "Mid volume", "High volume"],
     "Star rating": ["1 star", "2 star", "3 star", "4 star", "5 star", "Not rated"],
     "Spending (MSPB)": ["Below 0.95", "0.95-0.99", "1.00-1.04", "1.05 and above", "Not available"],
     "Census region": ["Northeast", "Midwest", "South", "West"],

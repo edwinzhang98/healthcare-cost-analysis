@@ -214,7 +214,41 @@
           "penalty_per_discharge": 342.05
         }
       },
-      "Size": {},
+      "Volume": {
+        "High volume": {
+          "n_hospitals": 937,
+          "mean_err": 1.0028,
+          "ci_low": 1.0002,
+          "ci_high": 1.0054,
+          "share_penalized": 0.921,
+          "share_discharges": 0.693,
+          "share_excess_readmissions": 0.7346,
+          "share_penalty": 0.7458,
+          "penalty_per_discharge": 378.92
+        },
+        "Low volume": {
+          "n_hospitals": 949,
+          "mean_err": 0.999,
+          "ci_low": 0.9966,
+          "ci_high": 1.0013,
+          "share_penalized": 0.7302,
+          "share_discharges": 0.0725,
+          "share_excess_readmissions": 0.0516,
+          "share_penalty": 0.0517,
+          "penalty_per_discharge": 251.02
+        },
+        "Mid volume": {
+          "n_hospitals": 891,
+          "mean_err": 1.0026,
+          "ci_low": 1.0003,
+          "ci_high": 1.005,
+          "share_penalized": 0.8754,
+          "share_discharges": 0.2345,
+          "share_excess_readmissions": 0.2139,
+          "share_penalty": 0.2025,
+          "penalty_per_discharge": 304.06
+        }
+      },
       "Star rating": {
         "1 star": {
           "n_hospitals": 167,

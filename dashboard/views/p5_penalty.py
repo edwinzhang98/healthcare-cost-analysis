@@ -134,7 +134,7 @@ for c in ("reduction_pct", "cms_reduction_fy2026", "cms_reduction_fy2027"):
     if c in det.columns:
         det[c] = det[c] * 100            # show as percentage points
 st.dataframe(det[cols].sort_values("penalty", ascending=False), hide_index=True, width="stretch",
-             column_config={"facility_name": "Hospital", "size_band": "Size",
+             column_config={"facility_name": "Hospital", "size_band": "HRRP volume",
                             "est_total_payments": st.column_config.NumberColumn("Est. base Medicare payments/yr", format="$%d"),
                             "penalty": st.column_config.NumberColumn("Est. penalty/yr", format="$%d"),
                             "reduction_pct": st.column_config.NumberColumn("Est. payment cut", format="%.2f%%"),
