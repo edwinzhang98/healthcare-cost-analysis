@@ -1,793 +1,438 @@
 # 02 · Metric definitions
 
-This is the project's metric dictionary. Every number in the README, memo, report and dashboard has one definition here: what it means, its formula and grain, its unit, the SQL column or Python function that computes it, CMS's own definition with a link, and the ways it is commonly miscomputed. The definitions were written before the analysis so that two people computing the same metric get the same number, and they are kept in sync with the code. Values come from `reports/key_metrics.json` (pipeline run of 2026-11-03) unless a footnote says how they were computed.
+One definition for every number in the README, memo, report and dashboard. Each entry gives the meaning, then the **formula, grain and unit**, the **code** that computes it (SQL column, or `module.function()` in `src/module.py`), **CMS**'s definition and source, and **pitfalls**. Values: `reports/key_metrics.json` (run of 2026-11-03; keys abbreviated `bc.` = `business_case.`, `sc.` = `business_case.scenarios.`) unless another source is named.
 
-**Data and scope.** Three CMS Care Compare files: HRRP (FY2026 program, discharges Jul 1, 2021 – Jun 30, 2024), MSPB-1 (CY2024) and Hospital General Information. "Our group" is the **illustrative client group**: 8 New Jersey hospitals drawn by a seeded, size-stratified rule. It is not an actual health system.
+**Scope.** CMS Care Compare files: HRRP (FY2026; discharges Jul 1, 2021 – Jun 30, 2024), MSPB-1 (CY2024), Hospital General Information. The **client group** is an illustrative set of 8 New Jersey hospitals drawn by a seeded rule, not an actual health system.
 
-## Read this first: where numbers usually diverge
+## Read this first: where numbers diverge
 
-Most disagreements about a number come from one of these seven choices. Every entry below states which option it uses.
-
-| Question to settle | Options that get mixed up | This project's choice |
+| Choice | Often mixed up | This project |
 |---|---|---|
-| Which window? | 3-year totals vs per-year figures | HRRP counts are 3-year totals. Anything named `annual` or "per year" is the 3-year total ÷ 3. |
-| Which hospitals? | 3,055 in the HRRP file; 2,992 payment-eligible; 2,777 scored | Penalty, thresholds, peers and segments use payment-eligible hospitals. "Share penalized" divides by scored hospitals. |
-| Which threshold? | ERR 1.00; national median; CMS peer-group median | National median ERR per condition (CMS peer groups are not in the public files). 1.00 is run as a sensitivity. |
-| Which excess readmissions? | Signed or positive part; measured from ERR 1.00 or from the threshold | Totals use the positive part, measured from ERR 1.00. "Excess readmissions above threshold" is a separate metric. |
-| Which share penalized? | 78.2% of hospitals CMS lists; 82.4% of CMS's penalty-eligible hospitals; 84.1% of our scored hospitals | Always name the denominator. |
-| Which rules? | FY2026 (3 years, fee-for-service only) vs FY2027+ (2 years, Medicare Advantage in the score, penalty on fee-for-service payments only) | Penalty estimate: FY2026 rules. Business case: FY2027+ rules. |
-| Which program year? | Steady state vs a phase-in year | Program metrics are steady-state annual values (reached in FY2032 in the phase-in). A phase-in value always carries its fiscal year. |
+| Window | 3-year totals vs per year | HRRP counts are 3-year totals; "annual" = ÷ 3. |
+| Hospitals | 3,055 listed; 2,992 payment-eligible; 2,777 scored | Payment-eligible for penalty, thresholds, peers, segments; share penalized ÷ scored (§5.6). |
+| Rules | FY2026: 3 years, fee-for-service (FFS). FY2027+: 2 years, Medicare Advantage (MA) in the score, cut on FFS payments | Penalty estimate: FY2026. Business case: FY2027+. |
+| Program year | Steady state vs phase-in year | Steady state = full strength (FY2032); phase-in values name their year. |
 
 ## 1. Conventions
 
 | Term | Definition |
 |---|---|
-| Facility ID | 6-character CMS Certification Number (CCN), kept as text so leading zeros survive. First two characters = state; last four 0001–0879 = short-term hospitals [SOM]. All HRRP IDs pass the format checks (F1, F2). |
-| Conditions | HF heart failure, PN pneumonia, COPD, AMI heart attack, CABG bypass surgery, HIP_KNEE elective primary hip/knee replacement. Medical = HF, PN, COPD, AMI. Surgical = CABG, HIP_KNEE (`seeds/condition_params.csv`, column `care_type`). |
-| HRRP file | 18,330 rows = 3,055 hospitals × 6 conditions (Provider Data Catalog dataset 9n3s-kdb3) [PDC]. |
-| Payment-eligible hospital | In the HRRP file, outside Maryland, and still listed in Hospital General Information: 2,992 hospitals. Maryland's 43 hospitals are exempt from HRRP payment cuts [T15-26]. 20 hospitals are no longer listed (closed, merged or converted). Column `is_payment_eligible` (`sql/05`). Maryland hospitals keep their ERRs in the tables but are left out of thresholds, peers, segments and penalty totals. |
-| Scored row / scored hospital | A scored row is a hospital × condition row with a published ERR: 11,720 rows, 11,486 of them at payment-eligible hospitals[^rows]. A scored hospital has at least one scored row: 2,777 payment-eligible hospitals. |
-| Illustrative client group | 310010, 310052, 310069 (High volume); 310003, 310074, 310075 (Mid volume); 310061, 310119 (Low volume). Drawn with `numpy.random.default_rng(42)` from payment-eligible NJ hospitals with at least 3 scored conditions (`src/client.py`, `config.yaml`). Benchmarking target: 310010, Princeton (Plainsboro). Pilot hospitals: 310069 Inspira Mullica Hill and 310003 Palisades Medical Center. |
-| Units | Rates in percent (19.4 = 19.4%). Ratios unitless, 4 decimals as published. Dollars per year, nominal, at FY2026 payment rates, undiscounted unless labeled NPV. |
-| Rounding in prose | Dollars to 2–3 significant figures ($296M, $1.2M, $110K); shares to whole percent; ERR to 2 decimals in text and 4 in tables. |
-| Check IDs | V3, N3, P1 and similar refer to the automated checks in `sql/09_dq_checks.sql` (31 checks) and `src/analysis.py` (P1–P6), stored in `data/processed/dq_checks_all.parquet` and described in `docs/03_data_quality_checks.md`. |
-| Source of truth | `reports/key_metrics.json`, regenerated by `python run.py`. The README, memo, report and dashboard read or copy from it; nobody recomputes a headline by hand. A definition changes here first, then in the code, then in a new pipeline run. |
+| Facility ID | 6-character CMS Certification Number (CCN), kept as text; first two characters = state; last four 0001–0879 = short-term hospitals, 0880–0899 = reserved for hospitals in demonstration projects [SOM]. HRRP IDs reach 0893 (checks F1–F2). |
+| Conditions | HF heart failure, PN pneumonia, COPD, AMI heart attack, CABG bypass, HIP_KNEE elective hip/knee replacement; surgical = CABG, HIP_KNEE. |
+| Payment-eligible | In the HRRP file (18,330 rows = 3,055 hospitals × 6 conditions [PDC]), outside Maryland (43, exempt [T15-26]) and still in Hospital General Information: 2,992 (`is_payment_eligible`). Of the 20 no longer listed, 4 are confirmed critical access conversions, 1 possible, 15 unverified, likely closures or mergers (03 §8). |
+| Scored | Hospital × condition row with a published ERR: 11,720, of which 11,486 at payment-eligible hospitals (`mart_segment_summary`); scored hospital = at least one (2,777 payment-eligible). |
+| Client group | 310010, 310052, 310069 (High volume); 310003, 310074, 310075 (Mid); 310061, 310119 (Low): `numpy.random.default_rng(42)` over payment-eligible NJ hospitals with ≥3 scored conditions (`src/client.py`). Target 310010 Princeton (Plainsboro); pilot 310069 Inspira Mullica Hill, 310003 Palisades. |
+| Units | Rates in percent; ratios as published; dollars per year, nominal, FY2026 rates, undiscounted unless NPV. |
+| Checks, tables | F1, V3, P1 etc. = the 37 checks (`sql/09`, `src/analysis.py`; see 03). Named tables are in `data/processed/` or `reports/tables/`. |
 
 ## 2. Time windows
 
-Three dates sit behind every HRRP number: the data window, the program year whose penalty it sets, and the period of discharges the penalty is applied to. The rule [CFR152]: the payment adjustment for fiscal year N applies to discharges from Oct 1 of N−1 to Sep 30 of N. Through FY2026 it is based on discharges from Jul 1 of N−5 to Jun 30 of N−2 (36 months). From FY2027 it is based on Jul 1 of N−4 to Jun 30 of N−2 (24 months). The window closes 15 months before the payment year starts. Implemented in `src/cost_model.py` as `hrrp_window(fy)` and `fiscal_year(d)`.
+The FY N adjustment applies to discharges Oct 1 (N−1) – Sep 30 (N) and uses discharges Jul 1 (N−5) – Jun 30 (N−2) through FY2026 (36 months, FFS, COVID-19 excluded) and Jul 1 (N−4) – Jun 30 (N−2) from FY2027 (24 months, FFS + MA, no COVID-19 exclusion); the window closes 15 months before the payment year [CFR152, FACT27]. Code: `cost_model.hrrp_window()`, `cost_model.fiscal_year()`.
 
-### 2.1 HRRP program years
+| Program year | Data window | Penalty applies to | Program months in window (start Jan 2027) → effect share | Notes |
+|---|---|---|---|---|
+| **FY2026 (our data)** | Jul 2021 – Jun 2024 | Oct 2025 – Sep 2026 | n/a | Ended; 2,304 of 2,945 penalized [T15-26] |
+| FY2027 | Jul 2023 – Jun 2025 | Oct 2026 – Sep 2027 | 0 | In effect; 2,334 of 2,912 penalized [T15-27]; hospital data due early 2027 [FACT27] |
+| FY2028 | Jul 2024 – Jun 2026 | Oct 2027 – Sep 2028 | 0 | [IPPS27] |
+| FY2029 | Jul 2025 – Jun 2027 | Oct 2028 – Sep 2029 | 6 of 24 (25%) → 12.5% | First year the program can lower the penalty |
+| FY2030 | Jul 2026 – Jun 2028 | Oct 2029 – Sep 2030 | 18 of 24 (75%) → 50% | Sepsis measure enters payment [IPPS27] |
+| FY2031 | Jul 2027 – Jun 2029 | Oct 2030 – Sep 2031 | 24 of 24 (100%) → 87.5% | Derived from the rule |
+| FY2032 | Jul 2028 – Jun 2030 | Oct 2031 – Sep 2032 | 24 of 24 → 100% | Full strength; end of horizon |
 
-| Program year | Data window (index discharges) | Length | Patients counted in the ERR | Penalty applies to discharges | Program months in window (start Jan 1, 2027) | Notes |
-|---|---|---|---|---|---|---|
-| **FY2026 (our data)** | Jul 1, 2021 – Jun 30, 2024 | 36 months | Medicare fee-for-service (FFS), age 65+; COVID-19 admissions excluded | Oct 1, 2025 – Sep 30, 2026 | n/a | Ended. 2,304 of 2,945 listed hospitals penalized [T15-26]. |
-| FY2027 | Jul 1, 2023 – Jun 30, 2025 | 24 months | FFS + Medicare Advantage (MA); COVID-19 exclusion removed | Oct 1, 2026 – Sep 30, 2027 | 0 of 24 | In effect now. 2,334 of 2,912 penalized [T15-27]. Hospital-level measure data due on data.cms.gov in early 2027 [FACT27]. |
-| FY2028 | Jul 1, 2024 – Jun 30, 2026 | 24 months | FFS + MA | Oct 1, 2027 – Sep 30, 2028 | 0 of 24 | Window set in the FY2027 rule [IPPS27]. |
-| FY2029 | Jul 1, 2025 – Jun 30, 2027 | 24 months | FFS + MA | Oct 1, 2028 – Sep 30, 2029 | 6 of 24 (model: 12.5% of full effect) | First year the program can lower the penalty [IPPS27]. |
-| FY2030 | Jul 1, 2026 – Jun 30, 2028 | 24 months | FFS + MA; sepsis readmission measure enters payment | Oct 1, 2029 – Sep 30, 2030 | 18 of 24 (model: 50%) | [IPPS27] |
-| FY2031 | Jul 1, 2027 – Jun 30, 2029 | 24 months | FFS + MA | Oct 1, 2030 – Sep 30, 2031 | 24 of 24 (model: 87.5%) | Window derived from the rule; not yet set in a final rule. |
-| FY2032 | Jul 1, 2028 – Jun 30, 2030 | 24 months | FFS + MA | Oct 1, 2031 – Sep 30, 2032 | 24 of 24 (model: 100%) | Derived from the rule. Last year of the business-case horizon. |
+Effect share = program months in the window weighted by strength (first 12 months at 50%) ÷ 24 (`program_share_of_cms_window`, `bc_phase_in.parquet`). The window is filled from FY2031, but full strength arrives in FY2032 (payments from Oct 2031); FY2031 gets about 88%.
 
-"Model" = program months in the window weighted by program strength (months in the first program year count 50%) ÷ 24. Column `program_share_of_cms_window` in `data/processed/bc_phase_in.parquet`.
-
-### 2.2 The other files
-
-| File | Period | Patients | Notes |
-|---|---|---|---|
-| MSPB-1 (Medicare spending per beneficiary) | CY2024: Jan 1 – Dec 31, 2024 | Medicare FFS; MA excluded | Publicly reported from the January 2026 Care Compare refresh [MSPBFAQ]. Does not line up with the HRRP window (check T2). |
-| Hospital General Information | Snapshot at download (5,419 facilities) | n/a | Ownership, hospital type, emergency services and star rating as of the release, not as of the HRRP window. |
-| Overall star rating | As shown in that snapshot. Methodology v5.1 since April 2026; the April 2026 rating used October 2025 Care Compare data [STAR51]. | n/a | Measure periods differ from the HRRP window. |
-| CMS validation files | FY2026 supplemental data file and Table 15; FY2027 Table 15 | n/a | Used only to test the method, never as model inputs (`src/validate_cms.py`). |
-
-### 2.3 What the windows mean for our numbers
-
-- The penalty estimate describes the FY2026 program, which ended Sep 30, 2026. It is a historical baseline, not this year's bill.
-- The business case applies FY2027+ rules: a 2-year window, MA patients counted in the score, and the penalty charged only on FFS payments [FACT27, IPPS26]. Scenario `broad_fy2026_rules` re-runs the broad program under FY2026 rules for comparison.
-- Business-case timeline (`config.yaml`, `intervention`): program start Jan 1, 2027; first 12 months at half strength (`ramp_first_year: 0.5`); horizon FY2027–FY2032; 7% discount rate for NPV.
-- FY2026 and FY2027 ERRs are not comparable: the cohort, the window and the COVID-19 rule all change [QNM].
+Other files: MSPB-1 is CY2024 (T2); Hospital General Information and star ratings are download snapshots; CMS's supplemental file and Table 15s only test the method (`src/validate_cms.py`).
 
 ## 3. CMS measure fields (HRRP file)
 
-CMS publishes these fields. `sql/02_stg_hrrp_readmissions.sql` type-casts them and labels why a value is blank; we never recompute them. Grain for all of them: hospital × condition × FY2026 window.
+Published by CMS, typed in `sql/02_stg_hrrp_readmissions.sql`, never recomputed. Grain: hospital × condition × FY2026 window.
 
-| `reporting_status` | What CMS published | Footnote | Rows | How it is used |
-|---|---|---|---|---|
-| reported | ERR, rates, discharges and readmissions | blank (7,798) or 29 (239) | 8,037 | All metrics. The only rows used to fit pass-through. |
-| counts_suppressed | ERR and rates. Readmissions "Too Few to Report" (1–10), discharges "N/A" | blank (3,545) or 29 (138) | 3,683 | All metrics, with imputed discharges. |
-| too_few_cases | Nothing: fewer than 25 eligible discharges | 1 | 3,150 | No score; contributes 0 to the penalty. |
-| not_available | Nothing: no result for this period | 5 | 3,255 | No score (1,975 of these rows are CABG). |
-| no_cases | Discharges = 0 | 7 | 205 | No score. Not missing data. |
+| `reporting_status` | Published | Footnote: rows | Rows |
+|---|---|---|---|
+| reported | all fields | blank 7,798; 29: 239 | 8,037 |
+| counts_suppressed | ERR, rates; readmissions "Too Few to Report" (1–10), discharges hidden | blank 3,545; 29: 138 | 3,683 |
+| too_few_cases | nothing (<25 discharges) | 1 | 3,150 |
+| not_available | nothing | 5 | 3,255 (1,975 CABG) |
+| no_cases | discharges = 0 | 7 | 205 |
 
-Footnotes per the Care Compare footnote crosswalk [FN]: 1 = too few cases to report; 5 = results not available for this reporting period; 7 = no cases met the criteria; 29 = calculated on partial-period data under a CMS-approved exception. Footnote-29 rows keep their published values and are flagged in `has_footnote_29`. Every blank value has one of these reasons (check N1).
+Only the first two carry a score; only `reported` rows fit pass-through. Footnotes [FN]: 1 too few cases; 5 not available; 7 no cases; 29 partial-period data under a CMS exception (kept, `has_footnote_29`). Every blank has a reason (N1).
 
 ### 3.1 Eligible discharges
 
-- **Meaning.** Medicare stays for the condition that meet the measure's cohort rules in the 3-year window. They are the denominator of every rate and the volume behind every penalty dollar.
-- **Formula and grain.** Published "Number of Discharges"; hospital × condition × 3-year window. Where CMS hides it, `discharges_est` = round((25 + U) ÷ 2), with U = max(25, floor(10 ÷ (predicted rate ÷ 100))). Low case = 25, high case = U. Annual = ÷ 3. Hospital total `eligible_discharges_3yr` = sum over scored conditions.
-- **Unit.** Index discharges per 3 years (per year where labeled annual).
-- **Computed in.** `stg_hrrp_readmissions.discharges` (`sql/02`); `fct_hospital_condition.discharges_est`, `discharges_est_low`, `discharges_est_high`, `discharges_upper_bound`, `discharges_imputed`, `discharges_est_annual` (`sql/05`); `dim_hospital.eligible_discharges_3yr` (`sql/06`).
-- **CMS definition.** Total eligible discharges in the measure cohort [HSR, Table 5]. FY2026 cohort: Medicare FFS beneficiaries aged 65+, enrolled in Parts A and B for the 12 months before admission, discharged alive from a short-term acute care hospital and not transferred, between Jul 1, 2021 and Jun 30, 2024. Exclusions include discharges against medical advice and COVID-19 diagnoses present on admission; MA patients are excluded [SPEC]. Results are public only with 25 or more eligible discharges [HSR].
-- **Pitfalls.**
-  - Not total Medicare volume and not all-payer volume. From FY2027 MA patients enter the cohort, so counts rise and are not comparable with FY2026 [QNM].
-  - A 3-year total. Mixing 3-year and annual figures is the most common error with this file.
-  - Hidden on 3,683 rows (31% of scored rows) because readmissions were 1–10 [PDC]. Imputed discharges are 9.7% of all eligible discharges and 54.6% of hip/knee discharges (check N3). Against CMS's unsuppressed counts [SUPP], our estimate is 1.09× the actual overall, 1.33× for hip/knee and 0.83× for pneumonia, and the actual count falls inside our low–high range on 86% of the 3,635 rows that could be checked (`reports/tables/cms_validation_imputation.csv`). The upper bound uses the shrunk predicted rate, so it is not a hard bound.
-  - Zero with footnote 7 means no eligible cases, not a missing value.
+Stays meeting the cohort rules: the denominator of every rate and penalty dollar.
+- **Formula, grain, unit.** Published "Number of Discharges"; hospital × condition × 3 years; discharges. Hidden counts: `discharges_est` = round((25 + U) ÷ 2), U = max(25, floor(10 ÷ (predicted rate ÷ 100))); range [25, U].
+- **Code.** `stg_hrrp_readmissions.discharges`; `fct_hospital_condition.discharges_est` (`_low`, `_high`, `_annual`), `discharges_imputed`; `dim_hospital.eligible_discharges_3yr`.
+- **CMS.** Eligible discharges [HSR]: FFS, 65+, Parts A and B for 12 months, discharged alive, not transferred, no COVID-19 on admission [SPEC]; public at ≥25.
+- **Pitfalls.** A 3-year total (the most common mixing error). Not all-payer; MA joins from FY2027. Hidden on 3,683 rows (9.7% of discharges, 54.6% of hip/knee; N3), checked against CMS's counts in 03 §10.4. Footnote 7 zero = no cases.
 
 ### 3.2 Number of readmissions
 
-- **Meaning.** Count of eligible discharges followed by an unplanned readmission to any acute care hospital within 30 days. Actual events, not model output.
-- **Formula and grain.** Published "Number of Readmissions"; hospital × condition × 3-year window.
-- **Unit.** Readmissions per 3 years.
-- **Computed in.** `stg_hrrp_readmissions.readmissions`, `readmissions_suppressed` (`sql/02`).
-- **CMS definition.** Eligible discharges with an unplanned readmission to the same or another hospital within 30 days; an observed count [HSR, Table 5]. Shown only when 11 or more [HSR]. CMS policy prohibits publishing cell values of 1–10 or values from which they could be derived [RESDAC].
-- **Pitfalls.**
-  - "Too Few to Report" means 1–10, not zero. CMS hides the discharge count on the same rows.
-  - Counts readmissions to any hospital, so a hospital's own records undercount.
-  - Published counts start at 11 (check V5). Anything fitted on observed counts, such as pass-through (§8.1), leaves out hospitals with 1–10 readmissions.
+Eligible discharges followed by an unplanned readmission to any hospital within 30 days; counted events.
+- **Formula, grain, unit.** Published count; hospital × condition × 3 years; readmissions.
+- **Code.** `stg_hrrp_readmissions.readmissions`, `readmissions_suppressed`.
+- **CMS.** Observed count [HSR]; values 1–10 are never published [RESDAC].
+- **Pitfalls.** "Too Few to Report" = 1–10, not 0. Includes other hospitals, so own records undercount.
 
 ### 3.3 Observed readmission rate
 
-- **Meaning.** Share of eligible discharges readmitted, with no risk adjustment and no shrinkage.
-- **Formula and grain.** 100 × readmissions ÷ discharges, on reported rows only. For suppressed rows the business case uses an implied rate, expected + (predicted − expected) ÷ pass-through, which approximately undoes CMS's shrinkage. Hospital × condition × window.
-- **Unit.** Percent.
-- **Computed in.** `stg_hrrp_readmissions.observed_rate_pct` (`sql/02`); implied rate in `src/cost_model.py` `ModelInputs.build()`.
-- **CMS definition.** Not a published field. CMS publishes predicted and expected rates instead [HSR].
+Share of discharges readmitted; no risk adjustment, no shrinkage.
+- **Formula, grain, unit.** 100 × readmissions ÷ discharges (reported rows); hospital × condition; percent. Hidden rows (business case): expected + (predicted − expected) ÷ pass-through, clipped to 0–100.
+- **Code.** `stg_hrrp_readmissions.observed_rate_pct`; implied rate in `cost_model.ModelInputs.build()`.
+- **CMS.** Not published [HSR].
+- **Pitfalls.** Not risk-adjusted; never rank on it. The implied rate is noisy at low volume.
+
+### 3.4 Predicted and expected readmission rates
+
+Predicted: CMS's model rate for the hospital's patients with its own hospital effect (ERR numerator). Expected: the rate an average hospital would have with those patients (ERR denominator).
+- **Formula, grain, unit.** Hierarchical logistic model: Σ patient probabilities ÷ discharges, with the hospital's own or the average hospital effect [SPEC]; hospital × condition; percent.
+- **Code.** `stg_hrrp_readmissions.predicted_rate_pct`, `expected_rate_pct`.
+- **CMS.** [HSR]; predicted = "adjusted actual readmissions" in SSA §1886(q).
+- **Pitfalls.** Predicted rates are shrunk toward the national average, most at low volume [MEDPAC13]. Expected rates are case-mix specific, not national (medians: HF 19.4, COPD 17.9, PN 15.5, AMI 13.2, CABG 10.5, hip/knee 5.4; `national.conditions.*.expected_rate_pct`), with no social-risk adjustment [SPEC].
+
+### 3.5 Excess readmission ratio (ERR)
+
+Readmissions vs an average hospital with the same patients (1.05 = 5% more); the score behind the penalty.
+- **Formula, grain, unit.** Predicted ÷ expected; hospital × condition; ratio. Identity holds within 0.000065 (V3); range 0.4698–1.6297 (V1).
+- **Code.** `stg_hrrp_readmissions.err`, `has_err`, `reporting_status`.
+- **CMS.** [HSR], [SPEC]; 42 CFR 412.152 [CFR152].
 - **Pitfalls.**
-  - Not risk-adjusted. Do not rank hospitals on it.
-  - Correlates 0.86 with the predicted rate (check V7), not 1.0, because predicted rates are shrunk.
-  - The implied rate divides by a small pass-through at low volume, so it is noisy there. It is clipped to 0–100%.
-
-### 3.4 Predicted readmission rate
-
-- **Meaning.** CMS's model estimate of the hospital's 30-day readmission rate for its own patients, using the hospital's own estimated effect. Numerator of the ERR.
-- **Formula and grain.** From CMS's hierarchical logistic model: the sum over the hospital's patients of each patient's predicted probability including the hospital-specific effect, divided by discharges [SPEC]. Published; hospital × condition × window.
-- **Unit.** Percent (15.5 = 15.5%).
-- **Computed in.** `stg_hrrp_readmissions.predicted_rate_pct` (`sql/02`).
-- **CMS definition.** The hospital's predicted rate given its performance and case mix; the ERR numerator, called "adjusted actual readmissions" in SSA §1886(q) [HSR, Table 5]. The model is fitted in SAS PROC GLIMMIX [SPEC].
-- **Pitfalls.**
-  - Not the observed rate. The hospital effect is shrunk toward the national average, most at low volume [RED, COPSS].
-  - Percent units: divide by 100 before multiplying by discharges.
-
-### 3.5 Expected readmission rate
-
-- **Meaning.** The rate an average hospital would have had with this hospital's patients. Denominator of the ERR.
-- **Formula and grain.** Same model, with the average hospital effect in place of the hospital's own [SPEC]. Published; hospital × condition × window.
-- **Unit.** Percent.
-- **Computed in.** `stg_hrrp_readmissions.expected_rate_pct` (`sql/02`).
-- **CMS definition.** The rate at an average hospital with a similar case mix; the ERR denominator [HSR, Table 5].
-- **Pitfalls.**
-  - Not the national rate: it is specific to each hospital's case mix. Medians across payment-eligible scored rows: HF 19.4%, COPD 17.9%, PN 15.5%, AMI 13.2%, CABG 10.5%, hip/knee 5.4% (`national.conditions.*.expected_rate_pct`).
-  - Adjusts for age and clinical risk, not social risk [SPEC]. Dual eligibility enters HRRP only through peer groups at the payment step [SPEC, SSA].
-
-### 3.6 Excess readmission ratio (ERR)
-
-- **Meaning.** Readmissions relative to an average hospital with the same patients. 1.05 means 5% more readmissions than expected. It is the score the penalty is based on.
-- **Formula and grain.** ERR = predicted rate ÷ expected rate; hospital × condition × window. Published to 4 decimals. In our file the identity holds within 0.000065 on every scored row (check V3). Range 0.4698–1.6297 (check V1).
-- **Unit.** Ratio.
-- **Computed in.** `stg_hrrp_readmissions.err`, `has_err`, `reporting_status` (`sql/02`); carried into `fct_hospital_condition` (`sql/05`).
-- **CMS definition.** Predicted ÷ expected readmission rate [HSR, Table 5], from a hierarchical logistic regression [SPEC]. Published only with 25+ eligible discharges [HSR]. Regulatory definition in 42 CFR 412.152 [CFR152].
-- **Pitfalls.**
-  - An ERR above 1.00 does not mean penalized. The penalty compares the ERR with a peer median; here the national median, which is slightly below 1.00 for five of the six conditions (§5.1).
-  - Shrinkage: small hospitals' ERRs are pulled toward 1.00, so they rarely look extreme and get only partial credit for improvement [RED, COPSS, MEDPAC13]. See pass-through (§8.1).
-  - Low reliability for medical conditions at typical volumes: median reliability 0.58 (AMI), 0.61 (HF), 0.68 (PN) and 0.65 (COPD), against 0.78 (CABG) and 0.94 (hip/knee) [THOMPSON]. Part of any year-to-year change is noise.
-  - Not comparable across program years. FY2027 adds MA patients, shortens the window to 2 years and removes the COVID-19 exclusion [IPPS26, QNM].
-  - Care Compare's "risk-standardized readmission rate" equals ERR × the national observed rate and is estimated on a wider set of hospitals. It is not the HRRP ERR [QA].
-  - The regulation defines the ratio with the words "but not less than 1.0" [CFR152]. The published ERR is not floored, and applying the payment formula to the unfloored ERRs in CMS's FY2026 supplemental file reproduces all 2,945 published payment factors [SUPP]. Use the published value.
+  - Above 1.00 is not "penalized": the threshold is a median, slightly below 1.00 for five conditions (§5.1).
+  - Shrinkage pulls small hospitals toward 1.00 (§8.1) [MEDPAC13]. Median reliability: AMI 0.58, HF 0.61, PN 0.68, COPD 0.65, CABG 0.78, hip/knee 0.94 [THOMPSON], so year-to-year changes are partly noise.
+  - Not comparable across program years (§2) [IPPS26].
+  - The rule says "not less than 1.0" [CFR152], but published ERRs are unfloored and reproduce all 2,945 FY2026 payment factors [SUPP]. Use them as published.
 
 ## 4. Derived readmission metrics
 
 ### 4.1 Excess readmissions
 
-- **Meaning.** Readmissions above (or, if negative, below) what an average hospital would have had with the same patients, using CMS's predicted rate. It turns the ERR into a count of patients.
-- **Formula and grain.** discharges × (predicted rate − expected rate) ÷ 100, which equals discharges × expected rate ÷ 100 × (ERR − 1). Signed at hospital × condition. Totals labeled "excess readmissions" sum the positive part, max(value, 0). Annual = ÷ 3.
-  - Related metric, **excess readmissions above threshold** = annual discharges × expected rate ÷ 100 × max(ERR − threshold, 0). These are the readmissions the penalty charges for.
-- **Unit.** Readmissions per year (`_annual`) or per 3 years (`_3yr`).
-- **Computed in.** `fct_hospital_condition.excess_readmissions_3yr`, `excess_readmissions_annual` (signed), `excess_readmissions_annual_pos` (`sql/05`); hospital sums `dim_hospital.excess_readmissions_annual_net` and `excess_readmissions_annual_pos` (`sql/06`); segment sums in `mart_segment_summary` (`sql/08`). Above-threshold version: `src/analysis.py` `build()` → `condition_summary.excess_above_threshold`.
-- **CMS definition.** MedPAC describes excess readmissions as a hospital's adjusted (predicted) minus expected readmissions [MEDPAC13]. CMS's payment formula never counts readmissions; it multiplies (ERR − peer median) by payments [CFR152].
-- **Pitfalls.**
-  - Signed values cancel. Nationally the signed total is +217 a year, against 4,159 a year for the positive part (payment-eligible scored rows)[^net]. State which one you use; headline shares use the positive part.
-  - Measured from ERR 1.00, not from the penalty threshold. For HF the two versions give 1,601 and 1,629 excess readmissions a year nationally.
-  - Model-based counts built on the shrunk predicted rate, not counted events. At small hospitals they understate the observed gap.
-  - Suppressed rows use imputed discharges.
+Readmissions above (negative: below) an average hospital with the same patients: the ERR as patients.
+- **Formula, grain, unit.** discharges × (predicted − expected) ÷ 100 = discharges × expected ÷ 100 × (ERR − 1); signed at hospital × condition; readmissions per year (÷ 3) or per 3 years. Totals sum the positive part. **Above threshold** = annual discharges × expected ÷ 100 × max(ERR − threshold, 0), what the penalty charges for.
+- **Code.** `fct_hospital_condition.excess_readmissions_3yr`, `_annual`, `_annual_pos`; `dim_hospital.excess_readmissions_annual_net`, `_pos`; `analysis.build()` → `condition_summary.excess_above_threshold`.
+- **CMS.** Predicted minus expected readmissions [MEDPAC13]; the payment formula never counts them [CFR152].
+- **Pitfalls.** Signed values cancel (national +217 a year signed vs 4,159 positive[^net]). Measured from 1.00, not the threshold. Model-based: understate observed gaps at small hospitals.
 
 ### 4.2 Readmission index
 
-- **Meaning.** One number per hospital summarizing its ERRs: the discharge-weighted average ERR across the conditions it has a score for. A project metric used for ranking and peer comparison.
-- **Formula and grain.** Σc (ERR_c × discharges_est_c) ÷ Σc discharges_est_c, over scored conditions; hospital × window.
-- **Unit.** Ratio (1.00 = as expected). Payment-eligible scored hospitals: median 1.00, range 0.55–1.36[^index].
-- **Computed in.** `dim_hospital.readmission_index` (`sql/06`); percentile among peers in `src/benchmarking.py` `peer_summary()`.
-- **CMS definition.** None. Not a CMS measure, and not CMS's hospital-wide readmission measure used in the star rating [STAR51].
-- **Pitfalls.**
-  - Weighted by discharges, not payments. Two hospitals with the same index can have very different penalties, because a hip/knee readmission above the threshold costs about five times as much in penalty as an HF one (§5.8).
-  - Depends on which conditions are scored. Hospitals with one or two scored conditions are less comparable.
-  - Centered on 1.00, not on the penalty threshold.
+Discharge-weighted mean ERR over a hospital's scored conditions (project metric).
+- **Formula, grain, unit.** Σ ERR_c × discharges_c ÷ Σ discharges_c; hospital; ratio. Median 1.00, range 0.55–1.36 (scored payment-eligible hospitals).
+- **Code.** `dim_hospital.readmission_index`; percentile in `benchmarking.peer_summary()`.
+- **CMS.** None; not the hospital-wide readmission measure [STAR51].
+- **Pitfalls.** Discharge-weighted, not payment-weighted: a hip/knee excess readmission carries about 5× the penalty of an HF one (§5.7). Depends on which conditions are scored.
 
 ## 5. Penalty metrics
 
-The HRRP formula since FY2019, and our estimate of it:
-
 ```
-CMS [INFO27, CFR154]
-  reduction %  = min(3%, NM × Σc DRG ratio_c × max(ERR_c − peer-group median_c, 0))
-                 over conditions with 25+ eligible discharges
-  PAF          = 1 − reduction %      (applied to the year's FFS base operating DRG payments)
-
-Ours (sql/07_mart_penalty_estimate.sql, src/penalty.py)
-  condition payments_c = (eligible discharges_c ÷ 3) × payment per case_c
-  uncapped $           = NM × Σc condition payments_c × max(ERR_c − national median_c, 0)
-  estimated total $    = Σc condition payments_c ÷ 0.133            (used only for the cap and the %)
-  penalty $            = min(uncapped $, 3% × estimated total $)
-  reduction %          = penalty $ ÷ estimated total $
+CMS [CFR154, SUPP]  reduction % = min(3%, NM × Σc DRG ratio_c × max(ERR_c − peer median_c, 0)); PAF = 1 − reduction %
+Ours (sql/07, src/penalty.py)
+  payments_c = discharges_c ÷ 3 × payment per case_c;  base = Σc payments_c ÷ 0.133
+  penalty $  = min(NM × Σc payments_c × max(ERR_c − national median_c, 0), 3% × base);  reduction % = penalty $ ÷ base
 ```
 
-Two substitutions are forced by the public data: the national median replaces the peer-group median, and national payment per case × discharges replaces DRG ratio × total payments. The SQL mart is the base case; `src/penalty.py` is its Python twin for what-ifs. The two agree to $0.000000 per hospital (check P1).
+Public data force two substitutions: national medians for peer-group medians, and payment per case (assumptions B3) × discharges for DRG ratio × total payments. SQL is the base case; `src/penalty.py` is its twin for what-ifs (agreement $0.000000 per hospital, P1).
 
-### 5.1 Penalty threshold
+### 5.1 Penalty threshold and excess ratio over it
 
-- **Meaning.** The ERR above which a condition starts to add to the penalty.
-- **Formula and grain.** Ours: median ERR per condition across payment-eligible hospitals with an ERR, FY2026 window: HF 0.9989, PN 0.9957, COPD 0.9969, AMI 0.9994, CABG 1.0008, hip/knee 0.9910. CMS: the median ERR of the hospital's peer group, one of five equal-sized groups ranked by the share of the hospital's Medicare stays (FFS + MA) for patients with full Medicare-Medicaid dual eligibility [SUPP, SSA]. Grain: condition (ours); condition × CMS peer group (CMS). Sensitivity: 1.00.
-- **Unit.** Ratio.
-- **Computed in.** `fct_hospital_condition.penalty_threshold_err` (`sql/05`, CTE `threshold`); `src/penalty.py` `penalty_thresholds(method="national_median" | "one")`.
-- **CMS definition.** Peer-group median ERR in the payment formula [CFR152, INFO27]. Dual-eligible peer grouping required from FY2019 by SSA §1886(q)(3)(D) [SSA]. FY2026 peer groups, cut points and medians are in [SUPP]; for HF the five peer-group medians run from 0.9922 to 1.0164 (`reports/tables/cms_validation_thresholds.csv`).
-- **Pitfalls.**
-  - Peer groups are not in the Care Compare files. The national median slightly under-flags low-dual hospitals and over-flags high-dual (often safety-net) hospitals. Share of scored rows above the threshold, ours vs CMS: 46.4% vs 48.3% in peer group 1, 61.2% vs 53.7% in peer group 5 (`validation.peer_groups`). Overall our above/below call matches CMS's penalty indicator on 96.8% of hospital × condition rows.
-  - Using 1.00 instead lowers the national estimate from $296.1M to $285.3M and the penalized count from 2,336 to 2,308 (`national.penalty_sensitivity`).
-  - CMS recomputes the medians every program year, so the threshold moves even when a hospital does not.
-  - By construction about half of scored hospitals sit above the threshold for each condition.
+The ERR above which a condition adds to the penalty, and how far above it the ERR sits.
+- **Formula, grain, unit.** Threshold, ours: median ERR among payment-eligible hospitals: HF 0.9989, PN 0.9957, COPD 0.9969, AMI 0.9994, CABG 1.0008, hip/knee 0.9910 (condition; ratio). CMS: the median of the hospital's peer group (dual-eligible quintile) [SUPP]. Excess ratio = max(ERR − threshold, 0), 0 if unscored (hospital × condition; ratio points).
+- **Code.** `fct_hospital_condition.penalty_threshold_err` (CTE `threshold`), `excess_ratio_over_threshold`, `is_above_threshold`; `penalty.penalty_thresholds()`.
+- **CMS.** (ERR − peer-group median), counted with ≥25 discharges [CFR152]; peer groups required from FY2019 [SSA]; HF medians 0.9922–1.0164 across groups (`cms_validation_thresholds.csv`).
+- **Pitfalls.** The national median under-flags low-dual and over-flags high-dual hospitals (03 §10.5); in the client group this matters most at University Hospital (Newark): 0.34% estimated vs CMS's 0.05%, about $11K. A 1.00 threshold gives $285.3M and 2,308 penalized. Medians move every year. Unscored conditions are 0, not "at threshold".
 
-### 5.2 Excess ratio over threshold
+### 5.2 Neutrality modifier (NM)
 
-- **Meaning.** How far a condition's ERR sits above the penalty threshold; zero at or below it.
-- **Formula and grain.** max(ERR − threshold, 0) on scored rows, 0 otherwise; hospital × condition. Signed version `err_minus_threshold`; flag `is_above_threshold`.
-- **Unit.** Ratio points (0.02 = 2% of expected readmissions above the threshold).
-- **Computed in.** `fct_hospital_condition.excess_ratio_over_threshold`, `err_minus_threshold`, `is_above_threshold` (`sql/05`); `src/penalty.py` `estimate()` → `excess_ratio`.
-- **CMS definition.** The (ERR − peer-group median ERR) term, counted only when the ERR is above the median and the condition has 25+ eligible discharges [INFO27, CFR152].
-- **Pitfalls.**
-  - Unscored conditions (too few cases, not available, no cases) contribute 0. They are not "at threshold".
-  - A small excess ratio on a surgical condition can carry more dollars than a large one on a medical condition (§5.8).
+National multiplier keeping peer-grouped savings in line with the pre-FY2019 method.
+- **Formula, grain, unit.** 0.9627 (FY2026), 0.9628 (FY2027) [SUPP]; national; multiplier.
+- **Code.** `config.yaml` `penalty_model.neutrality_modifier`; `PenaltyParams`, `ProgramParams`.
+- **CMS.** [SUPP]; budget neutrality in SSA §1886(q)(3)(D) [SSA].
+- **Pitfalls.** Not in Care Compare. Omitting it overstates penalties by about 4%.
 
-### 5.3 Neutrality modifier (NM)
+### 5.3 DRG payment ratio
 
-- **Meaning.** One national multiplier CMS applies to every hospital's penalty so that peer grouping keeps total Medicare savings in line with the pre-FY2019 method.
-- **Formula and grain.** Set by CMS each program year: 0.9627 for FY2026, 0.9628 for FY2027 [SUPP]. National constant.
-- **Unit.** Multiplier.
-- **Computed in.** `config.yaml` `penalty_model.neutrality_modifier`; SQL variable `neutrality_modifier` in `sql/07`; `PenaltyParams.neutrality_modifier` and `ProgramParams.neutrality_modifier`.
-- **CMS definition.** Variable "Neutrality modifier" in [SUPP]; part of "aggregate payments for excess readmissions" in [CFR152]; budget-neutrality requirement in SSA §1886(q)(3)(D) [SSA].
-- **Pitfalls.**
-  - Cannot be derived from Care Compare. Take it from the supplemental file each year.
-  - Leaving it out overstates every penalty by about 4%.
+A condition's share of FFS base operating DRG payments; converts an ERR gap into a cut.
+- **Formula, grain, unit.** CMS: cohort payments ÷ all payments, MedPAR FY2021–FY2024 [SUPP]; hospital × condition; share. Ours is implied: the six always sum to 0.133, CMS's median.
+- **Code.** `config.yaml` `hrrp_payment_share`; CMS ratios only in `src/validate_cms.py`.
+- **CMS.** [SUPP], [CFR152].
+- **Pitfalls.** Varies by hospital (sum 0.075–0.192, 10th–90th percentile [SUPP]), so the % cut and the cap are approximate; below the cap the dollar penalty does not depend on it.
 
-### 5.4 DRG payment ratio
+### 5.4 Payment adjustment factor (PAF) and reduction %
 
-- **Meaning.** A condition's share of the hospital's Medicare FFS base operating DRG payments. It converts an ERR gap into a payment cut.
-- **Formula and grain.** CMS: base operating DRG payments for the condition's cohort ÷ base operating DRG payments for all the hospital's stays, FFS only, MedPAR FY2021–FY2024 for FY2026 [SUPP]; hospital × condition. Ours: not observed. The model implies ratio_c = 0.133 × condition payments_c ÷ Σ condition payments, so the six ratios always sum to 0.133, CMS's FY2026 median.
-- **Unit.** Share of payments (0–1).
-- **Computed in.** Implied by `config.yaml` `penalty_model.hrrp_payment_share` (0.133) and `seed_condition_params.base_payment_per_discharge`. CMS's actual ratios are read only in `src/validate_cms.py` (`cms_drg_ratio`).
-- **CMS definition.** "DRG payment ratio" in [SUPP]; aggregate payments for all discharges in [CFR152].
-- **Pitfalls.**
-  - Hospital-specific in CMS's data. The sum of the six runs from 0.075 to 0.192 (10th–90th percentile). Medians by condition: PN 0.046, HF 0.036, CABG 0.017, AMI 0.014, COPD 0.011, hip/knee 0.007 [SUPP]. A single 0.133 makes the percentage cut and the 3% cap approximate for any one hospital.
-  - Below the cap the dollar penalty does not depend on this share; it cancels (see the formula above).
+PAF multiplies the hospital's FFS base operating DRG payments for the year; reduction = 1 − PAF.
+- **Formula, grain, unit.** Formula block; ours = `penalty_est_annual ÷ est_total_base_payments_annual`; hospital × year; percent (0–3%).
+- **Code.** `mart_penalty_hospital.payment_reduction_pct`, `hits_cap`; `penalty.estimate()`.
+- **CMS.** [CFR154]; FY2026 factors [T15-26].
+- **Pitfalls.** Applies to all FFS base payments, not only the six conditions; excludes IME, DSH, outlier, low-volume and capital payments and all MA payments [CFR152, FACT27].
 
-### 5.5 Payment adjustment factor (PAF) and payment reduction %
+### 5.5 Estimated penalty $
 
-- **Meaning.** The PAF is the multiplier CMS applies to the hospital's Medicare FFS base operating DRG payments for the program year. Payment reduction % = 1 − PAF.
-- **Formula and grain.** Statutory formula (FY2019 onward): PAF = max(0.97, 1 − Σc NM × DRG ratio_c × max(ERR_c − peer median_c, 0)), over conditions with 25+ eligible discharges [INFO27, CFR154]. Ours: payment reduction % = min(uncapped penalty ÷ estimated total payments, 3%), stored as `penalty_est_annual ÷ est_total_base_payments_annual`; PAF = 1 − that. Hospital × program year.
-- **Unit.** Percent of base operating DRG payments (0–3%). PAF 0.97–1.00.
-- **Computed in.** `mart_penalty_hospital.payment_reduction_pct`, `hits_cap`, `penalty_cap_annual`, `est_total_base_payments_annual` (`sql/07`); `src/penalty.py` `estimate()` → `reduction_pct`, `hits_cap`.
-- **CMS definition.** 42 CFR 412.154 [CFR154], with definitions in 42 CFR 412.152 [CFR152]. Floor of 0.97 (3% maximum cut) from FY2015 in SSA §1886(q) [SSA]. FY2026 factors in Table 15 [T15-26].
-- **Pitfalls.**
-  - The cut applies to all of the hospital's Medicare FFS base operating DRG payments in the program year, not only to the six conditions [CFR152, FACT27]. The base excludes IME, DSH, outlier and low-volume payments, and capital [CFR152]. It never applies to MA payments [FACT27].
-  - It applies to discharges in the payment year (FY2026: Oct 1, 2025 – Sep 30, 2026), which starts 15 months after the data window closes.
-  - Against CMS's FY2026 actuals: mean cut among penalized hospitals 0.46% vs 0.44%; median 0.34% vs 0.30%; hospitals at the cap 10 vs 15; correlation of the cut across 2,937 hospitals r = 0.92 (Spearman 0.94).
+Dollars lost to HRRP in a year under FY2026 rules (CMS publishes factors, not dollars).
+- **Formula, grain, unit.** Formula block; payment-eligible hospitals, scored conditions; contributions scale pro rata at the cap; hospital × condition and hospital; dollars per year. Payment per case (assumptions B3): HF $8,523, PN $9,928, COPD $7,583, AMI $13,139, CABG $30,892, hip/knee $12,062.
+- **Code.** `mart_penalty_condition.penalty_contribution_annual`; `mart_penalty_hospital.penalty_est_annual`; `penalty.estimate()`.
+- **CMS.** Aggregate payments for excess readmissions [CFR152]; FY2026 cuts were 0.44% of base payments, no dollar total [IPPS26].
+- **Pitfalls.** Not official: $296.1M vs CMS's nearest totals, $316.1M (FY2025 method) and about $361M (FY2027) [IPPS26, IPPS27]. National, not wage-adjusted, payments: ±30% gives $207M–$385M, so single hospitals are ±30%. Hidden counts at 25 or at the bound: $275.3M–$316.6M.
 
-### 5.6 Estimated penalty $
+### 5.6 Penalized hospital and share penalized
 
-- **Meaning.** What the hospital loses to HRRP in a year under the FY2026 program, in dollars. Our estimate: CMS publishes each hospital's payment adjustment factor, not its dollar amount.
-- **Formula and grain.**
-  1. Condition payments (per year) = (eligible discharges ÷ 3) × payment per case.
-  2. Uncapped penalty = NM × Σc condition payments_c × max(ERR_c − threshold_c, 0), at payment-eligible hospitals and on scored conditions only.
-  3. Cap = 3% × estimated total base payments, with estimated total = Σc condition payments_c ÷ 0.133.
-  4. Penalty = min(uncapped, cap). When the cap binds, condition contributions are scaled down pro rata.
+Payment-eligible with at least one scored condition above the threshold.
+- **Formula, grain, unit.** Uncapped penalty > 0; share = 2,336 ÷ 2,777 scored = 84.1%; hospital; count, share.
+- **Code.** `mart_penalty_hospital.is_penalized`, `hits_cap`; `national.hospitals_penalized`.
+- **CMS.** PAF < 1 [T15-26]: 2,304 of 2,945 listed (78.2%) = 82.4% of 2,797 penalty-eligible; 15 at the cap [IPPS26].
+- **Pitfalls.** Three denominators circulate; name it. Our call matches CMS's for 97.1% of 2,937 hospitals.
 
-  Grain: hospital × condition and hospital, per year. Payment per case (`seeds/condition_params.csv`): HF $8,523, the FY2026 base operating DRG payment for HF at wage index 1.0 (standardized amount × discharge-weighted DRG weights) [IPPS26-T1, IPPS26-T5, MUP24]. Other conditions = HF × CMS's median within-hospital payment per case relative to HF, from the FY2026 supplemental file (`reports/tables/cms_payment_weights.csv`): PN 1.165 ($9,928), COPD 0.890 ($7,583), AMI 1.542 ($13,139), CABG 3.625 ($30,892), hip/knee 1.415 ($12,062).
-- **Unit.** US dollars per year (nominal, FY2026 rates).
-- **Computed in.** `mart_penalty_condition.condition_payments_annual`, `penalty_contribution_uncapped`, `penalty_contribution_annual`; `mart_penalty_hospital.hrrp_condition_payments_annual`, `penalty_uncapped_annual`, `penalty_cap_annual`, `penalty_est_annual` (`sql/07`). Python twin: `src/penalty.py` `estimate()`.
-- **CMS definition.** Aggregate payments for excess readmissions = Σ base operating DRG payment × admissions × (ERR − peer-group median ERR) × NM [CFR152]. CMS put FY2026 penalties at 0.44% of base operating DRG payments and published no FY2026 dollar total [IPPS26].
-- **Pitfalls.**
-  - Not an official number. Our national total, $296.1M, is below CMS's nearest published totals: $316.1M (FY2026 rule, FY2025 method) and about $361M (FY2027 rule) [IPPS26, IPPS27].
-  - Uses national payment per case, not each hospital's wage-adjusted payments. Payment ±30% moves the national total to $207M–$385M; treat single-hospital dollars as ±30%.
-  - Hidden-discharge imputation: setting every hidden count to 25 gives $275.3M, to the upper bound $316.6M.
-  - Payment-eligible hospitals only. Maryland and hospitals no longer listed get $0.
-  - FFS only, one program year (FY2026), undiscounted.
+### 5.7 Penalty per excess readmission
 
-### 5.7 Penalized hospital, share penalized, hospitals at the cap
+Penalty dollars per readmission above the threshold, by condition.
+- **Formula, grain, unit.** Σ penalty ÷ Σ excess above threshold over payment-eligible scored rows; condition; dollars of annual penalty per excess readmission. One uncapped row: NM × payment per case ÷ expected rate (within 5% nationally[^ppe]). HF $41.5K, PN $58.9K, COPD $39.9K, AMI $93.7K, CABG $278.1K, hip/knee $216.6K.
+- **Code.** `analysis.build()` → `condition_summary.penalty_per_excess_readmission`.
+- **CMS.** None. MedPAC: payment × excess × 1 ÷ national rate, about 5× at a 20% rate [MEDPAC13]; under the pre-FY2019 formula almost 5× the stay's payment for HF and over 20× for hip/knee [MEDPAC18].
+- **Pitfalls.** A list price: zero below the threshold or at the cap. Shrinkage, MA share and regression to the mean cut the value of an avoided readmission to $15.1K (pilot) and $6.9K (broad)[^value]. Multiples are relative to the payment for the stay, not its cost: ours are about 4.9× (HF) and 18× (hip/knee)[^mult]; `penalty_per_excess_vs_readmission_cost` divides by the $19,000 cost instead.
 
-- **Meaning.** A hospital is penalized if it is payment-eligible and at least one scored condition is above the threshold.
-- **Formula and grain.** `is_penalized` = payment-eligible AND uncapped penalty > 0. Share penalized = penalized ÷ scored payment-eligible hospitals = 2,336 ÷ 2,777 = 84.1%. At cap = uncapped penalty > cap. Hospital × program year.
-- **Unit.** Count; share.
-- **Computed in.** `mart_penalty_hospital.is_penalized`, `hits_cap`, `n_conditions_penalized` (`sql/07`); `src/analysis.py` `build()` → `national.hospitals_penalized`, `national.share_penalized_of_scored`, `national.hospitals_at_cap`.
-- **CMS definition.** Penalized = PAF below 1.00 [T15-26]. FY2026: 2,304 of 2,945 hospitals listed (78.2%), which is 82.4% of the 2,797 penalty-eligible hospitals; 15 at the 3% cap [T15-26, IPPS26].
-- **Pitfalls.**
-  - Three denominators circulate (78.2%, 82.4%, 84.1%). Always name it.
-  - Validation: our penalized/not-penalized call matches CMS's for 97.1% of the 2,937 hospitals in both files (2,276 penalized by both, 575 by neither, 60 only by us, 26 only by CMS).
+### 5.8 Concentration and condition-mix shares
 
-### 5.8 Penalty per excess readmission
-
-- **Meaning.** Penalty dollars per readmission above the threshold, by condition. It explains why a few surgical readmissions cost more than many medical ones.
-- **Formula and grain.** Σ estimated penalty $ ÷ Σ excess readmissions above threshold, per condition, over payment-eligible scored rows. For one uncapped row this equals NM × payment per case ÷ (expected rate ÷ 100) exactly, so the national value stays within 5% of that expression evaluated at the median expected rate[^ppe]. National values: HF $41.5K, PN $58.9K, COPD $39.9K, AMI $93.7K, CABG $278.1K, hip/knee $216.6K. As a multiple of the $19,000 hospital cost of a readmission: 2.1× (COPD) to 14.6× (CABG).
-- **Unit.** Dollars of annual penalty per excess readmission per year. Equivalently, one extra readmission adds about this amount in total, spread over the program years whose windows include it.
-- **Computed in.** `src/analysis.py` `build()` → `condition_summary.penalty_per_excess_readmission`, `penalty_per_excess_vs_readmission_cost`.
-- **CMS definition.** None as a metric. MedPAC shows the statutory formula works out to DRG payment × adjusted excess readmissions × (1 ÷ national readmission rate), about 5× at a 20% rate [MEDPAC13]. One excess HF readmission costs almost 5× the initial HF payment; one excess hip/knee readmission more than 20× [MEDPAC18].
-- **Pitfalls.**
-  - A list price. It holds for a condition above the threshold at a hospital below the cap. Below the threshold, or at the cap, one readmission more or less changes nothing.
-  - Not the value of one avoided readmission. Shrinkage, the MA share of the FY2027+ cohort and regression to the mean all cut it: in the business case the pilot earns $15.1K of avoided penalty per avoided readmission and the broad program $6.9K[^value].
-  - Our multiple divides by the hospital cost of a readmission; MedPAC's divides by the payment for the index stay. On MedPAC's basis our values are HF 4.9× and hip/knee 18.0×, in line with MedPAC[^mult].
-
-### 5.9 Concentration and condition-mix shares
-
-- **Meaning.** How concentrated the penalty is across hospitals, and how discharges, excess readmissions and penalty dollars split across conditions.
-- **Formula and grain.**
-  - Top-10% share: rank all 2,992 payment-eligible hospitals (including unpenalized ones) by estimated penalty $; share of the national total held by the top 10% (299 hospitals). Top 20% likewise.
-  - Condition shares: condition total ÷ six-condition total over payment-eligible scored rows, per year, for `discharges_est_annual`, `excess_readmissions_annual_pos` and `penalty_contribution_annual`. "HF + PN" adds two shares; "surgical" = CABG + hip/knee.
-- **Unit.** Share.
-- **Computed in.** `src/drivers.py` `concentration_curve()` and `top_share()` → `concentration_curve.parquet`; `sql/08` National rows → `src/drivers.py` `condition_mix()` → `condition_summary.parquet`.
-- **CMS definition.** None (project metrics).
-- **Pitfalls.**
-  - The denominator changes the answer. Among penalized hospitals only (top 10% = 233 of 2,336), the top-10% share is 48.2%, not 54.6%[^top].
-  - Excess-readmission shares count readmissions above ERR 1.00 regardless of payment; penalty shares weight by payment and start at the threshold. "HF + PN = 74% of excess readmissions" and "surgery = 29% of penalty dollars" answer different questions, and both are correct.
+How concentrated the penalty is, and how discharges, excess readmissions and dollars split by condition.
+- **Formula, grain, unit.** Top-10% share: top 299 of 2,992 payment-eligible hospitals (unpenalized included) ÷ national total. Condition share: condition ÷ six-condition total; surgical = CABG + hip/knee; share.
+- **Code.** `drivers.concentration_curve()`, `drivers.top_share()`; `drivers.condition_mix()` → `condition_summary.parquet`.
+- **CMS.** None.
+- **Pitfalls.** Among penalized hospitals only, the top-10% share is 48.2%, not 54.6% (top 233 of 2,336, `mart_penalty_hospital`). Excess shares start at 1.00 and ignore payment; dollar shares start at the threshold, so "HF + PN = 74% of excess readmissions" and "surgery = 29% of dollars" are both right.
 
 ## 6. Spending, quality and hospital attributes
 
 ### 6.1 MSPB-1 score
 
-- **Meaning.** Medicare spending per episode around a stay at this hospital, compared with the national median hospital, after price standardization and risk adjustment. 1.00 = national median; 1.05 = 5% more.
-- **Formula and grain.** CMS: MSPB amount = mean over the hospital's episodes of (standardized observed cost ÷ risk-adjusted expected cost) × national average observed episode cost; score = MSPB amount ÷ episode-weighted national median MSPB amount [MIF]. An episode is all Part A and B claims from 3 days before an IPPS admission to 30 days after discharge [MIF]. Hospital × CY2024. Our bands: Below 0.95, 0.95–0.99, 1.00–1.04, 1.05 and above, Not available.
-- **Unit.** Ratio.
-- **Computed in.** `stg_mspb.mspb_ratio`, `mspb_footnote` (`sql/03`); `dim_hospital.mspb_ratio`, `mspb_band` (`sql/06`); regression input `mspb_per_005` = (MSPB − 1) ÷ 0.05 in `src/drivers.py` `regression_frame()`.
-- **CMS definition.** Hospital IQR Re-Evaluated MSPB Hospital Measure Information Form [MIF]; reporting period and release in [MSPBFAQ].
-- **Pitfalls.**
-  - Contains readmission spending: an inpatient readmission inside the 30-day window is part of the index episode [MIF]. Its association with ERR (+0.38 ERR points per +0.05 MSPB in the adjusted model, §6.7) is partly built in. Do not treat MSPB as an independent cause of readmissions, and do not add MSPB-based savings to readmission savings in a cost model.
-  - Price-standardized: wage-index, IME and DSH effects are removed [MIF]. It is not what the hospital is paid.
-  - CY2024, not the HRRP window (check T2).
-  - Excludes episodes with MA enrollment or a death during the episode, and is public only with 25+ episodes [MIF]. 2,872 of the 3,055 HRRP hospitals have a score (check N4).
+Medicare spending per episode around a stay vs the national median hospital, price-standardized and risk-adjusted.
+- **Formula, grain, unit.** Mean of (standardized observed ÷ expected cost) × national average episode cost, ÷ the national median; episode = Part A and B claims 3 days before to 30 days after the stay [MIF]; hospital × CY2024; ratio.
+- **Code.** `stg_mspb.mspb_ratio`; `dim_hospital.mspb_band`; `mspb_per_005` in `drivers.regression_frame()`.
+- **CMS.** [MIF].
+- **Pitfalls.** Includes readmission spending, so its link to ERR (+0.38 points per +0.05, §6.6) is partly built in; never add MSPB savings to readmission savings. Not what the hospital is paid. Excludes MA; 2,872 of 3,055 HRRP hospitals scored (N4).
 
 ### 6.2 Overall star rating
 
-- **Meaning.** CMS's 1-to-5-star summary of hospital quality.
-- **Formula and grain.** Weighted average of five standardized measure-group scores: Mortality 22%, Safety of Care 22%, Readmission 22%, Patient Experience 22%, Timely & Effective Care 12%. A rating needs at least 3 measures in at least 3 groups, one of them Mortality or Safety of Care. Hospitals are grouped by the number of groups they report, and k-means clustering assigns the stars [STAR4]. From April 2026 (v5.1), hospitals in the lowest quartile of Safety of Care scores are capped at 4 stars [STAR51]. Hospital × release.
-- **Unit.** Stars (1–5) or "Not rated".
-- **Computed in.** `stg_hospital_info.star_rating`, `star_rating_footnote` (`sql/04`); `dim_hospital.star_rating_label` (`sql/06`).
-- **CMS definition.** [STAR4], [STAR51]; group weights finalized in the CY2021 OPPS/ASC final rule [OPPS21].
-- **Pitfalls.**
-  - Circular with readmissions. The Readmission group (22%) contains the CABG, COPD and hip/knee readmission measures, which are risk-standardized versions of the measures behind those HRRP ERRs, plus excess days in acute care after AMI, HF and pneumonia stays [STAR51, OPPS21]. Part of the link between stars and ERR is built in. We show stars as a descriptive segment only and leave them out of the regression (`src/drivers.py`).
-  - Different period: the April 2026 rating used October 2025 Care Compare data [STAR51].
-  - Not every hospital is rated. 197 scored payment-eligible hospitals have no rating (for example footnote 16, too few measures [FN]). 3,174 of the 5,419 facilities in our Hospital General Information extract are rated.
+CMS's 1–5 star quality summary.
+- **Formula, grain, unit.** Mortality, Safety, Readmission and Patient Experience 22% each, Timely & Effective Care 12%; ≥3 measures in ≥3 groups; k-means stars [STAR4]; from April 2026 the lowest Safety quartile is capped at 4 stars [STAR51]; hospital; stars.
+- **Code.** `stg_hospital_info.star_rating`; `dim_hospital.star_rating_label`.
+- **CMS.** [STAR4], [STAR51].
+- **Pitfalls.** Circular: the Readmission group includes the CABG, COPD and hip/knee 30-day readmission measures, the hospital-wide readmission measure, and excess days in acute care (EDAC) after AMI, HF and pneumonia [STAR51]; descriptive segment only, not in the regression. 197 scored payment-eligible hospitals are unrated.
 
 ### 6.3 HRRP volume band
 
-- **Meaning.** How much HRRP-eligible Medicare volume a hospital has. Used to define peers and segments.
-- **Formula and grain.** `eligible_discharges_3yr` = Σ eligible discharges over scored conditions (3-year window, imputed where hidden). Low volume < 400; Mid volume 400–999; High volume ≥ 1,000; "No reported conditions" without any ERR. Hospital × window. The cut points are roughly terciles: of the 2,777 scored payment-eligible hospitals, 949 are Low volume (median 183 discharges), 891 Mid volume (median 644) and 937 High volume (median 1,593)[^bands].
-- **Unit.** Category.
-- **Computed in.** `dim_hospital.size_band` (`sql/06`). The column name is historical; the values are HRRP volume bands.
-- **CMS definition.** None (project definition). Context: CMS penalizes small hospitals less often. Its FY2026 impact table shows 65.6% of urban hospitals with 1–99 beds penalized vs 92.0% of those with 200–299 beds [IPPS26].
-- **Pitfalls.**
-  - Not hospital size. Bed counts are not in these files. A large hospital with few traditional-Medicare patients in these six conditions can be Low volume.
-  - From FY2027 MA patients enter the counts, so the cut points need recalibrating before bands are compared across years.
-  - Includes imputed discharges.
+HRRP-eligible Medicare volume; defines peers and segments.
+- **Formula, grain, unit.** `eligible_discharges_3yr`: Low < 400, Mid 400–999, High ≥ 1,000; hospital; category. Scored payment-eligible hospitals: 949 / 891 / 937 (medians 183 / 644 / 1,593).
+- **Code.** `dim_hospital.size_band` (historical name).
+- **CMS.** None (project definition).
+- **Pitfalls.** Not bed size. Includes imputed discharges; MA enters the counts from FY2027.
 
-### 6.4 Ownership group
+### 6.4 Ownership group and census region
 
-- **Meaning.** Who owns the hospital, in three groups.
-- **Formula and grain.** From CMS's Hospital Ownership field. Non-profit = Voluntary non-profit (private, church, other). For-profit = Proprietary, Physician. Government = Government (hospital district or authority, local, state, federal), Tribal, Veterans Health Administration, Department of Defense. Unknown if the hospital is not in Hospital General Information. Hospital × release. Scored payment-eligible hospitals: 1,788 non-profit, 599 for-profit, 390 government.
-- **Unit.** Category.
-- **Computed in.** `stg_hospital_info.ownership_group` (`sql/04`) → `dim_hospital.ownership_group` (`sql/06`).
-- **CMS definition.** The Hospital Ownership values follow the Provider of Services ownership codes [POS].
-- **Pitfalls.**
-  - Physician-owned hospitals sit in For-profit and Tribal hospitals in Government, to keep peer groups large.
-  - Ownership is as of the file release, not the HRRP window.
+Owner type in three groups, and US Census region (DC = South).
+- **Formula, grain, unit.** Non-profit = voluntary non-profit; For-profit = proprietary, physician; Government = government, tribal, VHA, DoD. Region from a state map in `sql/04`. Hospital; category. Scored hospitals: 1,788 / 599 / 390; South 1,136, Midwest 662, West 552, Northeast 427.
+- **Code.** `stg_hospital_info.ownership_group`, `census_region` → `dim_hospital`.
+- **CMS.** Ownership values follow the Provider of Services codes [POS]; region: none.
+- **Pitfalls.** Ownership is as of the file release. Differences are associations: the Northeast's +0.98 ERR points vs the Midwest (§6.6) does not say why.
 
-### 6.5 Census region
+### 6.5 Segment mean ERR and 95% interval
 
-- **Meaning.** Northeast, Midwest, South or West (US Census Bureau regions). DC counts as South; territories as Territory; hospitals missing from Hospital General Information as Unknown.
-- **Formula and grain.** State-to-region mapping in `sql/04`; hospital. Scored payment-eligible hospitals: South 1,136, Midwest 662, West 552, Northeast 427.
-- **Unit.** Category.
-- **Computed in.** `stg_hospital_info.census_region` (`sql/04`) → `dim_hospital.census_region` (`sql/06`).
-- **CMS definition.** None; a geographic grouping.
-- **Pitfalls.**
-  - Maryland is in the South but outside the payment-eligible universe.
-  - Region effects are associations. The Northeast's higher ERR (+0.98 ERR points vs the Midwest after adjustment, §6.7) does not say why.
+Average ERR of scored rows in a segment (region, state, ownership, volume, stars, MSPB band, emergency services).
+- **Formula, grain, unit.** mean ± 1.96 × SD ÷ √n over payment-eligible scored rows, flagged when n < 30; segment × condition; ratio. 50 state groups (49 states + DC; Maryland excluded); New Jersey is 2nd of 50 (1.0277; Massachusetts 1.0344).
+- **Code.** `mart_segment_summary.mean_err`, `mean_err_ci_low`, `mean_err_ci_high`, `small_sample_flag`.
+- **CMS.** None.
+- **Pitfalls.** Rows from one hospital are not independent, so intervals are too narrow. Row-weighted.
 
-### 6.6 Segment mean ERR and 95% interval
+### 6.6 ERR points and adjusted associations
 
-- **Meaning.** Average ERR of the scored rows in a segment (region, state, ownership, HRRP volume band, star rating, MSPB band, emergency services), with an interval.
-- **Formula and grain.** mean ± 1.96 × SD ÷ √n over payment-eligible scored hospital × condition rows; flagged when n < 30. Segment × condition, and segment × all six conditions.
-- **Unit.** Ratio.
-- **Computed in.** `mart_segment_summary.mean_err`, `mean_err_ci_low`, `mean_err_ci_high`, `small_sample_flag` (`sql/08`).
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Rows from the same hospital are not independent (up to six per hospital), so the interval is too narrow. The regression in §6.7 clusters errors by hospital for this reason.
-  - A row-weighted mean, not a hospital-weighted or discharge-weighted one.
-
-### 6.7 ERR points and adjusted associations
-
-- **Meaning.** The unit and the model used to compare hospital characteristics with the others held equal.
-- **Formula and grain.** ERR points = (ERR − 1) × 100; 1 point = 1% more readmissions than expected. Ordinary least squares of ERR points on condition (fixed effects), ownership group, HRRP volume band, census region, a no-emergency-department flag and MSPB (per +0.05), with standard errors clustered by hospital. 11,415 rows from 2,751 hospitals.
-- **Unit.** ERR points per category, or per +0.05 MSPB.
-- **Computed in.** `src/drivers.py` `regression_frame()` and `adjusted_associations()` → `regression_coefs.parquet`; `national.regression` in `key_metrics.json`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Associations, not causes. R² is 0.018: these characteristics explain little of the variation in ERR.
-  - MSPB is partly built from readmissions (§6.1).
+Unit and model for comparing characteristics with the others held equal.
+- **Formula, grain, unit.** ERR points = (ERR − 1) × 100. OLS on condition, ownership, volume, region, no-emergency-department flag and MSPB (per +0.05), errors clustered by hospital; 11,415 rows, 2,751 hospitals; points.
+- **Code.** `drivers.adjusted_associations()` → `regression_coefs.parquet`.
+- **CMS.** None.
+- **Pitfalls.** Associations, not causes; R² 0.018.
 
 ## 7. Benchmarking
 
 ### 7.1 Peers
 
-- **Meaning.** The comparison hospitals for one target hospital.
-- **Formula and grain.** Payment-eligible hospitals with at least one ERR, the same ownership group and the same HRRP volume band as the target, excluding the target. Optional extra keys: census region, emergency-department status. Peer counts are per condition, because only peers with an ERR for that condition count. For Princeton (Plainsboro): 707 peers overall, 704 for HF, 577 for hip/knee.
-- **Unit.** A set of hospitals.
-- **Computed in.** `src/benchmarking.py` `peer_ids()` (default keys `ownership_group`, `size_band`).
-- **CMS definition.** None. Different from CMS's peer groups, which are dual-eligible quintiles used only in the payment formula [SUPP].
-- **Pitfalls.**
-  - Say "peers (same ownership and HRRP volume)" or "CMS peer group", never just "peer group".
-  - `small_peer_group` flags fewer than 10 peers for a condition.
+Comparison hospitals for a target.
+- **Formula, grain, unit.** Payment-eligible hospitals with an ERR, same ownership group and volume band, target excluded, counted per condition; set. Princeton (Plainsboro): 707 overall, 704 HF, 577 hip/knee.
+- **Code.** `benchmarking.peer_ids()`.
+- **CMS.** None; not CMS's dual-eligible peer groups [SUPP].
+- **Pitfalls.** Say "peers (same ownership and volume)", never just "peer group". Fewer than 10 is flagged.
 
-### 7.2 Percentile vs peers and status
+### 7.2 Percentile, gap and readmissions vs peers
 
-- **Meaning.** Where the target sits among its peers. Higher = worse: a larger share of its peers has a lower ERR.
-- **Formula and grain.** 100 × share of peers with a strictly lower ERR for the condition (target × condition), or with a strictly lower readmission index (target hospital). Status: ≥ 75 "Worse than most peers"; ≤ 25 "Better than most peers"; otherwise "In line with peers"; "Too few cases to score" when the target has no ERR.
-- **Unit.** Percentile (0–100).
-- **Computed in.** `src/benchmarking.py` `benchmark()` → `benchmark_target.percentile_vs_peers`, `status`; `peer_summary()` → `index_percentile`; client grid in `src/analysis.py` `client_peer_grid()` → `client.peer_percentiles`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - The headline counts use the readmission-index percentile: "readmits more than the typical peer" = percentile > 50; "worst fifth" = percentile ≥ 80.
-  - A high percentile can rest on a small gap and a low-reliability score. Read it with the gap and the readmission count (§7.3).
-
-### 7.3 Gap and readmissions vs peer median
-
-- **Meaning.** How far the target is from its typical peer, as a ratio and as patients.
-- **Formula and grain.** Gap = ERR − peer median ERR. Readmissions vs peer median = annual discharges × expected rate ÷ 100 × (ERR − peer median ERR). Target × condition.
-- **Unit.** Ratio points; readmissions per year.
-- **Computed in.** `src/benchmarking.py` `benchmark()` → `gap_vs_peer_median`, `readmissions_vs_peer_median`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - A large ratio can mean few patients. Princeton (Plainsboro)'s hip/knee ERR of 1.38 is worse than 98.8% of its peers but amounts to 1.1 readmissions a year above the peer median, while driving an estimated $249K of that hospital's penalty.
-  - Model-based counts (shrunk predicted rate).
+Where the target sits among peers (higher = worse), and how far it is from the typical peer.
+- **Formula, grain, unit.** Percentile = 100 × share of peers with a lower ERR (or index); ≥ 75 "worse than most", ≤ 25 "better than most". Gap = ERR − peer median (ratio points); × annual discharges × expected ÷ 100 = readmissions per year. Target × condition.
+- **Code.** `benchmarking.benchmark()` → `percentile_vs_peers`, `gap_vs_peer_median`, `readmissions_vs_peer_median`; `benchmarking.peer_summary()`; `analysis.client_peer_grid()` → `client.peer_percentiles`.
+- **CMS.** None.
+- **Pitfalls.** Headline counts: index percentile > 50 = "readmits more than the typical peer", ≥ 80 = "bottom 20%"; HF ≥ 90, PN and COPD ≥ 75 (`recommendations.peer_summary()`). A high percentile can mean few patients: Princeton's hip/knee ERR of 1.38 (98.8th percentile) rests on 16 readmissions on 164 discharges over 3 years against 8.8 expected, about 2 extra a year (1.1 above the peer median in score terms)[^hk]. Its $249,157 is the FY2026 estimate; forward exposure is likely lower (FY2027 cut 0.04%; §8.2).
 
 ## 8. Model mechanics
 
 ### 8.1 Pass-through
 
-- **Meaning.** The share of an actual change in a hospital's readmission rate that reaches its CMS score. CMS's hierarchical model pulls small hospitals toward the national average, so they get only partial credit.
-- **Formula and grain.** (predicted − expected) ≈ λ(n) × (observed − expected), with λ(n) = n ÷ (n + k) and n = eligible discharges in the CMS window. k is fitted per condition by nonlinear least squares on the 8,037 reported rows: HF 369, PN 414, COPD 396, AMI 370, CABG 228, hip/knee 192 (R² 0.994–0.998). λ at 100 / 500 / 1,500 discharges: HF 0.21 / 0.58 / 0.80; hip/knee 0.34 / 0.72 / 0.89. In the business case n = FFS discharges per year ÷ (1 − MA share) × 2 years, the FY2027+ cohort and window. Grain: condition (k); hospital × condition (λ).
-- **Unit.** Share (0–1).
-- **Computed in.** `src/shrinkage.py` `fit_k()`, `pass_through()`, `binned_check()` → `shrinkage_k.parquet`, `shrinkage_bins.parquet`; applied in `src/cost_model.py` `evaluate()` (column `pass_through` in `bc_rows_*.parquet`). `pass_through_mode: full` sets λ = 1 for comparison.
-- **CMS definition.** None published. CMS's shrinkage is described in [RED] and [COPSS]; MedPAC notes it gives small hospitals partial credit for improvement [MEDPAC13]. Cross-check: λ for HF at 1,019 discharges is 0.73, close to the 0.70 reliability Thompson et al. report at that volume (check P6) [THOMPSON].
-- **Pitfalls.**
-  - Fitted only on rows with 11+ readmissions; hospitals with 1–10 are outside the fit.
-  - An empirical approximation of CMS's model. k may shift with the FY2027 cohort (MA patients, 2-year window).
-  - Applies to the score only. Readmissions avoided and payer savings are counted in full.
+Share of a real change in a hospital's readmission rate that reaches its CMS score; small hospitals get partial credit.
+- **Formula, grain, unit.** (predicted − expected) ≈ λ × (observed − expected), λ = n ÷ (n + k), n = discharges in the CMS window; k by least squares on the 8,037 reported rows: HF 369, PN 414, COPD 396, AMI 370, CABG 228, hip/knee 192 (R² 0.994–0.998); hospital × condition; share. HF λ at 100 / 1,500 discharges: 0.21 / 0.80.
+  - **Basis.** The business case uses the FY2027+ cohort, n = FFS discharges per year ÷ (1 − MA share) × 2 (1.13× the 3-year count): pilot rows 0.673 (Inspira Mullica Hill HF), 0.400 (Palisades HF), 0.447 (Palisades PN). The 3-year FFS basis of the data window gives 0.645 / 0.371 / 0.417[^pt]. Always say which.
+- **Code.** `shrinkage.fit_k()`, `shrinkage.pass_through()` → `shrinkage_k.parquet`; `pass_through` in `bc_rows_*.parquet`.
+- **CMS.** Not published; shrinkage gives small hospitals partial credit [MEDPAC13]. HF at 1,019 discharges: 0.73 vs Thompson's 0.70 reliability (P6) [THOMPSON].
+- **Pitfalls.** Fitted on rows with 11+ readmissions; k may shift under FY2027 rules. Score only: readmissions and payer savings count in full.
 
 ### 8.2 Persistence
 
-- **Meaning.** The share of today's ERR excess (ERR − 1) expected to remain in the FY2029+ windows without any program. Hospitals that look worst in one window tend to look better in the next even when nothing changes (regression to the mean).
-- **Formula and grain.** Baseline ERR = 1 + persistence × (ERR − 1); baseline observed rate = expected + persistence × (observed − expected). Base 0.5, range 0.3–0.8. Persistence = 1 reproduces "today's penalty continues" (scenario `targeted_pilot_no_rtm`). Hospital × condition.
-- **Unit.** Share (0–1).
-- **Computed in.** `ProgramParams.persistence`; `src/cost_model.py` `evaluate()` → `baseline_err`, `penalty_before`. The anchor is computed in `src/validate_cms.py` `run()` → `reports/tables/cms_validation_persistence.csv`.
-- **CMS definition and evidence.** No CMS metric. Anchors: across the 2,894 hospitals in both Table 15 files, CMS's FY2027 cut regressed on its FY2026 cut has slope 0.578 (correlation 0.573); the top decile's mean cut fell from 1.38% to 0.96%, and 40% of top-decile hospitals lost more than half of their cut [T15-26, T15-27]. Regression to the mean explained 74–87% of the ERR improvement at hospitals penalized in FY2013 [JOSHI].
-- **Pitfalls.**
-  - It lowers the baseline. The pilot hospitals' baseline penalty is $249K, against $485K today (`penalty_before` vs `penalty_today`). Comparing a program with today's penalty credits it with improvement that would have happened anyway.
-  - The FY2026→FY2027 slope mixes regression to the mean with the rule changes (MA patients, 2-year window), so it is an anchor, not a clean estimate.
-  - It regresses toward ERR 1.00, not toward the threshold.
+Share of today's ERR excess expected to remain in FY2029+ windows without a program (regression to the mean).
+- **Formula, grain, unit.** Baseline ERR = 1 + persistence × (ERR − 1); same for the observed rate; base 0.5 (0.3–0.8; 1.0 = `targeted_pilot_no_rtm`); hospital × condition; share.
+- **Code.** `cost_model.evaluate()` → `baseline_err`, `penalty_before`; anchor `validate_cms.run()` → `cms_validation_persistence.csv`.
+- **CMS.** No metric. Anchor (2,894 hospitals in both Table 15 files [T15-26, T15-27]): FY2027 cut ≈ 0.58 × FY2026 cut + 0.16 points (slope 0.578, intercept +0.0016, correlation 0.573). Penalties drift back toward the average: the top tenth's mean cut fell from 1.38% to 0.96% (about −30%; 40% of them lost more than half) and small cuts grew, while the mean barely moved (0.346% → 0.356%; FY2026-penalized 0.439% → 0.423%)[^pers]. Regression to the mean explained 74–87% of improvement at hospitals penalized in FY2013 [JOSHI].
+- **Pitfalls.** The slope is not a ratio of levels: with the intercept, the mean cut did not fall. It also reflects the FY2027 rule change (MA, 2-year window) and 12 shared months; FY2029+ windows share none. Persistence lowers the baseline (pilot $249K vs $485K today); comparing with today's penalty credits the program with natural improvement.
 
 ## 9. Program (business-case) metrics
 
-All program metrics are steady-state annual values under FY2027+ rules (the full program effect inside the CMS window, which is FY2032 in the phase-in) unless a fiscal year is named. One function computes them for any set of hospitals and any program design: `src/cost_model.py` `evaluate()`. Results are in `data/processed/bc_scenarios.parquet` and `business_case.scenarios` in `key_metrics.json`.
-
-Scenarios: `broad_all` (broad program, all 8 hospitals); `targeted_all` (targeted program, all 8); `targeted_pilot` (targeted program at the 2 client hospitals where it has the highest benefit-cost ratio when run alone, Inspira Mullica Hill and Palisades Medical Center; `src/analysis.py` `pilot_hospitals()`); variants `targeted_pilot_risk30`, `targeted_pilot_no_rtm`, `targeted_pilot_beds_refilled` and `broad_fy2026_rules`. The national run (`business_case.national`) applies both designs to every payment-eligible hospital with the national MA share of 54% [KFF-MA].
+Steady-state annual values under FY2027+ rules (full strength, FY2032) unless a year is named, from `cost_model.evaluate()` → `bc_scenarios.parquet`, `business_case.scenarios`. Scenarios: `broad_all`, `targeted_all` (8 hospitals), `targeted_pilot` (2 hospitals with the best benefit-cost ratio alone; `analysis.pilot_hospitals()`), variants `_risk30`, `_no_rtm`, `_beds_refilled`, `broad_fy2026_rules`. The national run uses an MA share of 54% [KFF-MA].
 
 ```
-cohort_c              = FFS eligible discharges per year_c ÷ (1 − MA share)     all Medicare patients in the FY2027+ score
-r_c                   = reach × min(risk multiplier, 1 ÷ reach) × relative reduction × condition multiplier_c
-baseline ERR_c        = 1 + persistence × (ERR_c − 1)
-new ERR_c             = baseline ERR_c − λ_c × r_c × baseline observed rate_c ÷ expected rate_c
-readmissions avoided  = Σc cohort_c × baseline observed rate_c ÷ 100 × r_c
-avoided penalty       = penalty(baseline ERR) − penalty(new ERR)                FFS payments only, 3% cap
-hospital net          = avoided penalty + shared savings − lost margin − program cost
-whole-system net      = V × readmissions avoided − program cost
+cohort_c             = FFS discharges per year_c ÷ (1 − MA share)
+r_c                  = reach × min(risk multiplier, 1 ÷ reach) × relative reduction × condition multiplier_c
+new ERR_c            = baseline ERR_c − λ_c × r_c × baseline observed rate_c ÷ expected rate_c
+readmissions avoided = Σc cohort_c × baseline observed rate_c ÷ 100 × r_c
+avoided penalty      = penalty(baseline ERR) − penalty(new ERR)          FFS payments, 3% cap
 ```
 
-Inputs (`config.yaml`, `intervention`; reasoning in `docs/assumptions.md`):
+**Inputs** (`config.yaml` `intervention`; sources in `docs/assumptions.md` C1–C16, B3). Broad: HF, PN, COPD, AMI on all scored rows, reach 50%, risk multiplier 1.0. Targeted: HF, PN above the threshold, reach 30%, risk 1.5. Both: base effect 10% (HF × 1.2, COPD × 0.5, surgery × 0.3), persistence 0.5, MA share 0.41 (NJ 41.1% [RUPRI]), no shared savings. Monte Carlo ranges: effect 3–20%, $250–$700 per enrollee, risk 1.2–1.8, persistence 0.3–0.8, MA 0.30–0.55, payment scale 0.85–1.20, variable share 0.60–0.90, fixed cost $10K–$60K.
 
-| Input | Broad program | Targeted program and pilot | Range tested | Anchor |
-|---|---|---|---|---|
-| Target conditions | HF, PN, COPD, AMI | HF, PN | n/a | n/a |
-| Targeting | all scored rows | rows above the threshold | n/a | n/a |
-| Reach (share of cohort enrolled) | 50% | 30% | ±30% (tornado) | assumption |
-| Risk multiplier (enrollees' risk vs average) | 1.0 | 1.5 | 1.2–1.8 | Donzé et al. 2016 (HOSPITAL score) |
-| Relative reduction among enrolled (base) | 10% | 10% | 3%–20% | post-2002 trials RR 0.89 [LEPPIN]; discharge planning RR 0.89 [COCHRANE]; phone calls alone no effect [BOGGAN] |
-| Condition multiplier on the reduction | HF 1.2, PN 1.0, AMI 1.0, COPD 0.5, CABG 0.3, hip/knee 0.3 | same | n/a | PACT-HF trial (Van Spall et al. 2019); [ZHONG]; [TOBIANO] |
-| Cost per enrollee | $400 | $400 | $250–$700 | [NUCKOLS] |
-| Fixed cost per hospital running | $25,000 | $25,000 | $10,000–$60,000 | assumption |
-| Hospital cost of a readmission (C) | $19,000 | $19,000 | ±30% (tornado) | [HCUP307] |
-| Medicare payment ÷ cost | 0.892 | 0.892 | n/a | FFS Medicare margin −12.1% [MEDPAC26] |
-| Variable cost share | 0.80 | 0.80 | 0.60–0.90 | 75–85% [MEDPAC25]; 16% short-run [ROBERTS] |
-| Payment scale (penalty size) | 1.0 | 1.0 | 0.85–1.20 | §5.6 (payment ±30% sensitivity) |
-| Share of payer savings returned to the hospital | 0 | 0 (30% in `targeted_pilot_risk30`) | n/a | scenario |
-| Freed beds refilled | no | no (yes in `targeted_pilot_beds_refilled`) | n/a | scenario |
-| Persistence | 0.5 | 0.5 | 0.3–0.8 | §8.2 |
-| MA share | 0.41 | 0.41 | 0.30–0.55 | NJ 41.1% [RUPRI] |
-| Pass-through | by volume (§8.1) | by volume | full (λ = 1) | §8.1 |
-| CMS window | 2 years | 2 years | 3 years in `broad_fy2026_rules` | [IPPS26] |
+### 9.1 Enrollees, program cost, readmissions avoided
 
-"Range tested" is the Monte Carlo low–high range where one exists (§9.15). Every input in `TORNADO_PARAMS` with a nonzero base value is also varied ±30% one at a time (§9.14).
+Who is enrolled, at what cost, and what it prevents.
+- **Formula, grain, unit.** Enrollees = cohort × reach over targeted rows (discharges per year: broad 2,309, pilot 201). Program cost = enrollees × $400 + $25,000 × hospitals (dollars per year: broad $1.12M, pilot $130K). Readmissions avoided per year among all Medicare patients, formula block, effect capped at 90% (broad 42.4, pilot 7.3).
+- **Code.** `evaluate()` → `enrollees`, `program_cost`, `readmissions_avoided`; `phase_in()` by year. **CMS.** None.
+- **Pitfalls.** Enrollees are discharges, not people, and include MA patients. Readmissions avoided count in full (shrinkage affects only the ERR); trial effects usually shrink in practice, and a before-and-after count overstates them (§8.2).
 
-### 9.1 Enrollees
+### 9.2 Avoided penalty
 
-- **Meaning.** Index discharges enrolled in the program per year.
-- **Formula and grain.** For each targeted hospital × condition: cohort per year × reach. Targeted = condition on the design's list, scored, and (targeted design only) ERR above the threshold.
-- **Unit.** Enrolled discharges per year.
-- **Values.** Broad program 2,309; pilot 201.
-- **Computed in.** `evaluate()` → `enrollees`.
-- **CMS definition.** None (project metric).
-- **Pitfalls.**
-  - Counts discharges, not people. A patient discharged twice can be enrolled twice.
-  - Includes MA patients. From FY2027 they count in the score, so a program that skips them moves the score less.
+The cut in the annual penalty attributable to the program.
+- **Formula, grain, unit.** Penalty at baseline ERR − penalty at new ERR, FFS payments, 3% cap; hospital; dollars per year. Full strength (FY2032): broad $292K, pilot $110K; FY2031: $267K, $96K[^phase]. Phase-in scales the ERR effect by the effect share (§2).
+- **Code.** `evaluate()` → `penalty_today`, `penalty_before`, `avoided_penalty`; `phase_in()`. **CMS.** Timing per [CFR152].
+- **Pitfalls.** Name the year. Measured against the baseline forecast, not today's penalty. Zero below the threshold.
 
-### 9.2 Program cost
+### 9.3 Payer saving (P), variable cost (V) and lost margin per readmission
 
-- **Meaning.** What the program costs to run per year.
-- **Formula and grain.** enrollees × cost per enrollee + fixed cost per hospital running the program. Broad: 2,309 × $400 + 8 × $25,000 = $1.12M a year. Pilot: 201 × $400 + 2 × $25,000 = $130K a year. In the phase-in, the fixed cost is charged for active months and the variable cost follows the ramp.
-- **Unit.** Dollars per year.
-- **Computed in.** `evaluate()` → `program_cost`; `phase_in()` → `program_cost` by fiscal year.
-- **CMS definition.** None.
-- **Pitfalls.** Excludes any transitional care management (TCM) billing revenue, which could offset part of the cost if the group's clinicians bill it.
+The money each avoided readmission moves.
+- **Formula, grain, unit.** P = 0.892 × C = $16,948 (what payers stop paying); V = 0.80 × C = $15,200 (cost that disappears); lost margin = max(P − V, 0) = $1,748 (0 if beds are refilled); dollars per readmission. Payer savings: broad $718K, pilot $123K a year.
+- **Code.** `ProgramParams.payment_per_readmission`, `variable_cost_per_readmission`, `lost_margin_per_readmission`; `evaluate()` → `payer_savings`, `system_savings`, `lost_margin`.
+- **Sources.** 0.892 from the −12.1% FFS Medicare margin [MEDPAC26]. Variable share: 75–85% of costs vary with volume [MEDPAC25]; short-run 16% [ROBERTS]. C = $19,000 (2025 dollars), chosen between condition-specific HCUP Medicare readmission costs (2013 [HCUP196] × 1.318, BEA PCE hospitals [BEA] = $16.1K–$19.1K for COPD, PN, HF, AMI) and the all-condition 2020 average ($18,100 [HCUP307] × 1.161 ≈ $21.0K, led by septicemia).
+- **Pitfalls.** A payer saving is hospital revenue lost unless shared back. MA assumed to pay like FFS. In the short run V is lower (lost margin $5,548 at a 0.60 share).
 
-### 9.3 Readmissions avoided
+### 9.4 Hospital net and payback year
 
-- **Meaning.** Actual readmissions prevented per year among all Medicare patients in the cohort (FFS and MA).
-- **Formula and grain.** Σ over targeted rows of cohort per year × baseline observed rate ÷ 100 × r (formula block above; the effect is capped at 90%). Hospital, per year.
-- **Unit.** Readmissions per year.
-- **Values.** Broad 42.4; pilot 7.3.
-- **Computed in.** `evaluate()` → `readmissions_avoided`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Counted in full. Shrinkage applies only to the ERR.
-  - Trial effects usually shrink outside trials, and post-discharge phone calls alone show no effect [BOGGAN].
-  - A before-and-after count at the hospital would overstate it, because rates fall on their own (§8.2).
+The program's effect on the hospital P&L.
+- **Formula, grain, unit.** Avoided penalty + shared savings − lost margin − program cost; hospital or group; dollars per year: broad −$906K, pilot −$33K, pilot with 30% shared +$4K. Payback = first year with cumulative undiscounted net > 0: "not within FY2032" in every scenario.
+- **Code.** `evaluate()` → `hospital_net`; `phase_in()` → `hospital_net_cum`, `hospital_npv_cum` (7%); `analysis.years_to_payback()`. **CMS.** None.
+- **Pitfalls.** Steady state skips the lag: cumulative FY2027–FY2032 is −$5.6M (broad) and about −$501K (pilot).
 
-### 9.4 Avoided penalty (steady state and phase-in)
+### 9.5 Whole-system net
 
-- **Meaning.** The reduction in the annual HRRP penalty attributable to the program.
-- **Formula and grain.** Steady state = penalty before − penalty after. Penalty before uses the baseline ERR (§8.2); penalty after uses the new ERR (formula block above). Both use FFS payments only, because MA patients count in the score but not in the payment base, and both apply the 3% cap. Phase-in: the same calculation with the ERR effect scaled by the program's share of the CMS window (§2.1): FY2027–FY2028 0, FY2029 12.5%, FY2030 50%, FY2031 87.5%, FY2032 100%. Hospital, per year.
-- **Unit.** Dollars per year.
-- **Values.** Steady state (= FY2032): broad $292K, pilot $110K. FY2031: broad $267K, pilot $96K[^phase].
-- **Computed in.** `evaluate()` → `penalty_today`, `penalty_before`, `penalty_after`, `avoided_penalty`; `phase_in()` → `bc_phase_in.parquet` (`program_share_of_cms_window`, `avoided_penalty`).
-- **CMS definition.** None as a metric; timing follows the HRRP windows [CFR152, IPPS27].
-- **Pitfalls.**
-  - "Fully counted" can point to two years. Program months fill the CMS window from FY2031 (Jul 2027 – Jun 2029), but the model reaches its steady-state value in FY2032 because the first program year runs at half strength. Name the year with the number.
-  - Measured against the baseline forecast, not today's penalty.
-  - Zero for conditions at or below the threshold, so a program that enrolls everyone earns little per readmission avoided (§5.8).
+The effect for payers and the hospital together; transfers between them cancel.
+- **Formula, grain, unit.** V × readmissions avoided − program cost; dollars per year: broad −$479K, pilot −$20K.
+- **Code.** `evaluate()` → `combined_net`. **CMS.** None.
+- **Pitfalls.** Uses V, not P, to avoid double counting. It does not value patients' health or time in dollars: patients' health gains are real but not counted.
 
-### 9.5 Payer savings per readmission (payment)
+### 9.6 Benefit-cost ratio and cost per readmission avoided
 
-- **Meaning.** What payers (traditional Medicare and MA plans) stop paying for each avoided readmission.
-- **Formula and grain.** P = payment-to-cost ratio × C = 0.892 × $19,000 = $16,948. Payer savings = readmissions avoided × P: broad $718K, pilot $123K a year.
-- **Unit.** Dollars per readmission; dollars per year.
-- **Computed in.** `ProgramParams.payment_per_readmission`; `evaluate()` → `payer_savings`.
-- **Source.** 0.892 is the payment-to-cost ratio implied by MedPAC's FY2024 FFS Medicare margin of −12.1% (cost = 1.121 × payment) [MEDPAC26]. C is the hospital cost of one readmission, anchored on HCUP's average cost of a Medicare readmission ($18,100 in 2020) [HCUP307].
-- **Pitfalls.**
-  - A payer saving is lost revenue for the hospital. It is a hospital benefit only to the extent it is shared back.
-  - Assumes MA plans pay about what traditional Medicare pays.
+Hospital return per program dollar, and program dollars per readmission prevented.
+- **Formula, grain, unit.** (Avoided penalty + shared savings − lost margin) ÷ program cost, dollars per $1: broad $0.19, targeted at 8 $0.38, pilot $0.75, pilot with 30% shared $1.03. Program cost ÷ readmissions avoided: broad $26.5K, pilot $17.9K (`bc.pilot_unit_economics`: also penalty relief $15,120, payer saving $16,948).
+- **Code.** `evaluate()` → `benefit_cost_ratio`, `cost_per_readmission_avoided`; `analysis.pilot_unit_economics()`. **CMS.** None.
+- **Pitfalls.** Not ROI (ratio − 1); hospital view, steady state. Cost per readmission above V means a negative whole-system net.
 
-### 9.6 Variable cost per readmission
+### 9.7 Break-even value
 
-- **Meaning.** The hospital cost that disappears when a readmission is avoided.
-- **Formula and grain.** V = variable cost share × C = 0.80 × $19,000 = $15,200 per readmission.
-- **Unit.** Dollars per readmission.
-- **Computed in.** `ProgramParams.variable_cost_per_readmission`; `evaluate()` → `system_savings` = readmissions avoided × V.
-- **Source.** MedPAC estimates that 75–85% of hospital costs vary with volume [MEDPAC25]. The classic short-run estimate is 16% [ROBERTS].
-- **Pitfalls.** A long-run view. In the short run staff and space costs stay, which lowers V and worsens the whole-system result.
+The input value giving zero net, others at base.
+- **Formula, grain, unit.** Bisection on `evaluate()` (reduction 0–60%, cost $0–$3,000, share 0–100%); unit of the input. Pilot: base effect 14.0% (whole-system 11.8%), $236 per patient, 26.7% of payer savings. Broad: none up to 60%; $7.77.
+- **Code.** `cost_model.break_even()` → `business_case.break_even`; `cost_model.grid()` → `bc_grid.parquet`. **CMS.** None.
+- **Pitfalls.** One input at a time. The input is the base (pneumonia) effect; with HF at 1.2×, the pooled effect across enrollees is 1.16 × base[^pool]: 14% base ≈ 16% pooled, 10% base ≈ 12% pooled (where 27% co-funding or $236 per patient breaks even). Month-24 rule (pooled): keep only if ≥16% at ≤$400 per patient, ≥12% with ≥27% payer co-funding, or ≥12% at ≤$236.
 
-### 9.7 Lost fee-for-service margin
+### 9.8 Sensitivity: ±30%, tornado, Monte Carlo
 
-- **Meaning.** Net revenue the hospital gives up per avoided readmission: it loses the payment and saves the variable cost.
-- **Formula and grain.** max(P − V, 0) = $16,948 − $15,200 = $1,748 per readmission; zero if freed beds are refilled. Lost margin = readmissions avoided × that: broad $74K, pilot $12.7K a year.
-- **Unit.** Dollars per readmission; dollars per year.
-- **Computed in.** `ProgramParams.lost_margin_per_readmission`; `evaluate()` → `lost_margin`.
-- **CMS definition.** None.
-- **Pitfalls.** Small in the base case because Medicare pays below cost. At a variable cost share of 0.60 it rises to $5,548 per readmission. MA patients are assumed to pay at the same rate.
+How far the result moves when inputs change.
+- **Formula, grain, unit.** ±30%: each `TORNADO_PARAMS` input with a nonzero base at −30% and +30% (reach, MA share capped at 0.95); sign flips of hospital and whole-system net. Monte Carlo: 2,000 draws (seed 42) of eight independent triangular inputs (ranges above); probability net > 0.
+- **Values.** Pilot: only payment +30% flips hospital net, to +$66[^flip]; broad: none. P(hospital net > 0) 11.9%, whole-system 22.7%; hospital net 5th / 50th / 95th percentile −$127K / −$54K / +$19K.
+- **Code.** `analysis.sensitivity_table()` → `bc_sensitivity*.parquet`; `cost_model.tornado()`; `cost_model.monte_carlo()` → `business_case.monte_carlo` (rerun identical, P5). **CMS.** None.
+- **Pitfalls.** The tornado and the ±30% table both cap variable cost share at 1.0 (+30% of 0.80 would be 1.04). Monte Carlo ranges lean adverse (median below base); correlated inputs would widen the spread.
 
-### 9.8 Hospital net
+### 9.9 Pilot power
 
-- **Meaning.** The annual effect of the program on the hospital P&L.
-- **Formula and grain.** avoided penalty + shared savings − lost margin − program cost, where shared savings = share returned × payer savings (0 in the base case). Hospital or group, per year.
-- **Unit.** Dollars per year.
-- **Values.** Broad −$906K; pilot −$33K; pilot with 30% of payer savings shared back +$4K. National run: the broad program is positive at 0 of 2,688 hospitals, the targeted program at 33 of 1,828 (1.8%).
-- **Computed in.** `evaluate()` → `hospital_net`; by fiscal year in `phase_in()` → `hospital_net`, `hospital_net_cum`, `hospital_npv_cum` (7%).
-- **CMS definition.** None.
-- **Pitfalls.** The steady-state value skips the years before penalty relief arrives. Cumulative FY2027–FY2032: broad −$5.6M, pilot −$0.50M.
-
-### 9.9 Whole-system net
-
-- **Meaning.** The annual effect for payers and the hospital together. Penalties, payments and shared savings are transfers between them and cancel; what remains is the resource cost saved minus the program cost.
-- **Formula and grain.** V × readmissions avoided − program cost. Code name `combined_net`; `system_savings` = V × readmissions avoided.
-- **Unit.** Dollars per year.
-- **Values.** Broad −$479K; pilot −$20K.
-- **Computed in.** `evaluate()` → `combined_net`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Uses V, not P, so payer savings and the hospital's revenue loss are not counted twice.
-  - Leaves out patient benefits (health, time) and any mortality effect. It is not a societal cost-effectiveness analysis.
-
-### 9.10 Benefit-cost ratio
-
-- **Meaning.** Hospital benefit returned per $1 of program cost. Not ROI (ROI = ratio − 1).
-- **Formula and grain.** hospital benefit ÷ program cost, where hospital benefit = avoided penalty + shared savings − lost margin. Steady state.
-- **Unit.** Dollars returned per $1.
-- **Values.** Broad $0.19; targeted program at all 8 hospitals $0.38; pilot $0.75; pilot with 30% shared back $1.03.
-- **Computed in.** `evaluate()` → `hospital_benefit`, `benefit_cost_ratio`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Hospital view only.
-  - Steady state. The cumulative position over FY2027–FY2032 is worse, because penalty relief starts only in FY2029.
-
-### 9.11 Cost per readmission avoided
-
-- **Meaning.** Program cost divided by the readmissions it prevents.
-- **Formula and grain.** program cost ÷ readmissions avoided. Broad $26.5K; pilot $17.9K.
-- **Unit.** Dollars per avoided readmission.
-- **Computed in.** `evaluate()` → `cost_per_readmission_avoided`.
-- **CMS definition.** None.
-- **Pitfalls.** Compare it with V ($15,200): whenever cost per readmission avoided exceeds V, the whole-system net is negative, before any transfers.
-
-### 9.12 Break-even value
-
-- **Meaning.** The value of one input at which hospital net (or whole-system net) is zero, all other inputs at base.
-- **Formula and grain.** Bisection on `evaluate()` within a search range (relative reduction 0–60%; cost per enrollee $0–$3,000). Null when the sign does not change within the range.
-- **Unit.** Unit of the input.
-- **Values.** Pilot: relative reduction 14.0% (hospital net) and 11.8% (whole-system net); cost per enrollee $236. Broad: no relative reduction up to 60% breaks even; cost per enrollee $7.77.
-- **Computed in.** `src/cost_model.py` `break_even()`; `src/analysis.py` `build()` → `business_case.break_even`; two-way map from `grid()` → `bc_grid.parquet`.
-- **CMS definition.** None.
-- **Pitfalls.**
-  - One input at a time.
-  - The reduction is the base (pneumonia) effect. Heart failure gets 1.2×, so a 14.0% base means 16.8% for HF enrollees.
-  - The 30% shared-savings figure is a scenario (`targeted_pilot_risk30`, hospital net +$4K), not a solved break-even.
-
-### 9.13 Payback year
-
-- **Meaning.** The first fiscal year in which cumulative (undiscounted) hospital net turns positive within FY2027–FY2032.
-- **Formula and grain.** `years_to_payback()` on `hospital_net_cum`; "not within FY2032" otherwise. Scenario.
-- **Unit.** Fiscal year.
-- **Values.** Not within FY2032 in every scenario.
-- **Computed in.** `src/analysis.py` `years_to_payback()` → `payback` in `bc_scenarios`.
-- **CMS definition.** None.
-- **Pitfalls.** Undiscounted. The NPV column (`hospital_npv_cum`) discounts at 7%.
-
-### 9.14 ±30% sensitivity and tornado
-
-- **Meaning.** How much each input moves the result, one at a time.
-- **Formula and grain.** Each input in `TORNADO_PARAMS` is set to −30% and +30% of its base value (shares capped at 0.95); records hospital net, whole-system net and whether the sign flips. The tornado sorts inputs by swing.
-- **Unit.** Dollars per year.
-- **Values.** Pilot: only Medicare payment per discharge +30% flips the hospital net, to +$66 a year[^flip]. Broad: no input flips it.
-- **Computed in.** `src/analysis.py` `sensitivity_table()` → `bc_sensitivity.parquet`, `bc_sensitivity_broad.parquet`; `src/cost_model.py` `tornado()` → `bc_tornado.parquet`.
-- **CMS definition.** None.
-- **Pitfalls.** The table and the tornado treat the variable cost share differently at +30%: the table uses 1.04 (uncapped), the tornado caps it at 1.00.
-
-### 9.15 Monte Carlo P(net > 0)
-
-- **Meaning.** The probability that the pilot's steady-state hospital net (or whole-system net) is positive when the uncertain inputs vary together.
-- **Formula and grain.** 2,000 draws with `numpy.random.default_rng(42)`. Eight inputs are drawn independently from triangular (low, base, high) distributions: relative reduction (3%, 10%, 20%), cost per enrollee ($250, $400, $700), risk multiplier (1.2, 1.5, 1.8), persistence (0.3, 0.5, 0.8), MA share (0.30, 0.41, 0.55), payment scale (0.85, 1.0, 1.2), variable cost share (0.60, 0.80, 0.90), fixed cost per hospital ($10K, $25K, $60K). P = share of draws with net > 0.
-- **Unit.** Probability.
-- **Values.** P(hospital net > 0) = 11.9%; P(whole-system net > 0) = 22.7%. Hospital net at the 5th / 50th / 95th percentile: −$127K / −$54K / +$19K.
-- **Computed in.** `src/cost_model.py` `monte_carlo()` → `bc_monte_carlo.parquet`; summary in `business_case.monte_carlo`. A same-seed rerun reproduces it exactly (check P5).
-- **CMS definition.** None.
-- **Pitfalls.**
-  - Inputs are independent. Correlated inputs would widen the spread.
-  - The median draw (−$54K) is below the base case (−$33K) because several ranges lean toward worse values (cost per enrollee up to $700, fixed cost up to $60K).
-  - The probability reflects the ranges we chose, not an observed frequency.
+Whether the pilot can show the effect it needs.
+- **Formula, grain, unit.** Two-group test of 30-day readmission, 80% power, two-sided 5%: n per group = (z0.975 + z0.80)² × [p0(1 − p0) + p1(1 − p1)] ÷ (p0 − p1)²; minimum detectable reduction (MDR) where n = enrolled. p0 31.3%; 2,480 per group for the base effect (11.6% pooled), about 1,250 for break-even; enrolled about 100 by month 12, 301 by month 24; MDR 52% and 32%.
+- **Code.** `analysis.pilot_power()` → `business_case.pilot_power`. **CMS.** None.
+- **Pitfalls.** The pilot cannot prove a break-even effect, so month 12 is stop/continue on delivery, cost and safety (≥80% receive all three components, ≥90 enrolled, variable cost ≤ $400 per patient, no rise in ED visits, observation stays, mortality or readmissions vs the comparison group) and the effect is judged at month 24 (§9.7). Optimistic (no clustering or matching losses). Not significant ≠ no effect.
 
 ## 10. Where each headline number comes from
 
-Every headline number in the README and memo (quoted wording where possible), plus the few report-level numbers they rest on, with its key in `reports/key_metrics.json` (dots separate nesting levels) and the code that produces it. Values are from the 2026-11-03 run. The Headline column keeps the rounding used in the text; Current value is unrounded. Python modules are in `src/`.
+README and memo numbers (abridged) and their `reports/key_metrics.json` keys; § gives the definition and code.
 
-| Headline | Current value | Key in `key_metrics.json` | Produced by | See |
-|---|---|---|---|---|
-| CMS data for 3,055 hospitals; 18,330 rows | 3,055; 18,330 | `data.hrrp_hospitals`; `data.hrrp_rows` | `sql/01`, `sql/02`; `analysis.build()` | §1 |
-| 30 checks pass, 7 documented warnings, 0 fail | PASS 30, WARN 7 | `data.dq_checks` | `sql/09_dq_checks.sql` (31 checks) + `analysis.build()` (P1–P6) → `dq_checks_all.parquet` | §1 |
-| 2,336 hospitals penalized (our estimate) | 2,336 (84.1% of 2,777 scored) | `national.hospitals_penalized`; `national.share_penalized_of_scored` | `sql/07` → `mart_penalty_hospital.is_penalized` | §5.7 |
-| CMS's actual count: 2,304 | 2,304 | `known_numbers.fy2026_hospitals_penalized` | `config.yaml` `known_numbers` [T15-26] | §5.7 |
-| $296M a year in penalties nationally | $296,097,525 | `national.total_penalty` | `sql/07` → Σ `penalty_est_annual` | §5.6 |
-| Below CMS's nearest published totals ($316M–$361M) | $316,131,336; $361,347,626 | `known_numbers.fy2026_total_penalty_reference_low`; `known_numbers.fy2026_total_penalty_reference_high` | `config.yaml` [IPPS26, IPPS27] | §5.6 |
-| Single-hospital dollars carry roughly ±30% uncertainty | national $207.3M (payment −30%) to $384.9M (+30%) | `national.penalty_sensitivity` (rows "Payment per discharge -30%/+30%") | `analysis.build()` with `penalty.estimate()` → `penalty_sensitivity.parquet` | §5.6 |
-| The top 10% of hospitals carry 55% | 54.6% | `national.top10_share_of_penalty` | `drivers.concentration_curve()`, `drivers.top_share()` | §5.9 |
-| HF and pneumonia produce 74% of excess readmissions | 74.1% | `national.hf_pn_share_excess_readmissions` | `sql/08` → `drivers.condition_mix()` → `analysis.build()` | §5.9 |
-| Surgery generates 29% of penalty dollars from 13% of discharges | 28.5%; 13.0% | `national.surgical_share_penalty`; `national.surgical_share_discharges` | same | §5.9 |
-| About $217K per extra hip/knee readmission vs $42K for HF | $216,638; $41,518 | `national.conditions.HIP_KNEE.penalty_per_excess_readmission`; `national.conditions.HF.penalty_per_excess_readmission` | `analysis.build()` → `condition_summary.parquet` | §5.8 |
-| New Jersey has the second-highest average ERR | NJ 1.0277 (MA 1.0344) | `national.top_states_by_mean_err` | `sql/08` State rows → `drivers.segment_table()` | §6.6 |
-| The group loses about $1.2M a year | $1,231,071; 8 of 8 hospitals penalized | `client.total_penalty`; `client.hospitals_penalized` | `sql/07` for the 8 client IDs; `analysis.build()` | §5.6 |
-| Two hospitals account for 62% | 61.5%: Princeton (Plainsboro) $383,982 + Inspira Mullica Hill $373,137 | `client.top2_share`; `client.hospitals` (first two) | `analysis.build()` | §5.6 |
-| Heart failure ($511K) and hip/knee ($327K) drive most of the group's penalty | $510,953; $327,395 | `client.penalty_by_condition.HF`; `client.penalty_by_condition.HIP_KNEE` | `sql/07` → `mart_penalty_condition.penalty_contribution_annual` | §5.6 |
-| 7 of 8 hospitals readmit more than their typical peer; 5 sit in the worst fifth | 7; 5 | derived from `client.peer_percentiles` (`index_percentile`)[^peer] | `analysis.client_peer_grid()`; counting rules in `recommendations.peer_summary()` | §7.2 |
-| HF at three hospitals worse than 90%+ of peers; COPD at four hospitals | Inspira Mullica Hill 98.9, Palisades 96.1, Jersey City 93.4; 4 hospitals at ≥ 75 for COPD | derived from `client.peer_percentiles` (`HF`, `COPD`)[^peer] | same | §7.2 |
-| One hospital's hip/knee ratio (1.38) is worse than 99% of peers | ERR 1.3835; 98.8th percentile of 577 peers | `client.benchmark_target.HIP_KNEE.err`, `.percentile`, `.n_peers` | `benchmarking.benchmark()` → `benchmark_target.parquet` | §7.2 |
-| Hip/knee review protects about $250K a year of exposure | $249,157 | `client.target_penalty_by_condition.HIP_KNEE` | `sql/07` → `mart_penalty_condition` | §7.3 |
-| That hospital's FY2027 cut fell to 0.04% | 0.0004 | `validation.client` (row `facility_id` 310010, `cms_reduction_fy2027`) | `validate_cms.run()` → `cms_validation_client.csv` | §2.1 |
-| This year's cuts fell at most of our hospitals and roughly doubled at Palisades | fell at 5 of 8; Palisades 0.61% → 1.19% | `validation.client` (`cms_reduction_fy2026`, `cms_reduction_fy2027`)[^cuts] | `validate_cms.run()` | §8.2 |
-| CMS's FY2027 cuts kept only about 58% of each hospital's FY2026 cut | slope 0.578 | `validation.persistence.slope_fy2027_on_fy2026` | `validate_cms.run()` → `cms_validation_persistence.csv` | §8.2 |
-| Group-wide program would cost about $1.1M a year | $1,123,729 | `business_case.scenarios.broad_all.program_cost` | `cost_model.evaluate()` | §9.2 |
-| ... and avoid about $0.29M ($0.3M) in penalties once fully counted | $292,053 steady state (FY2032 in the phase-in; FY2031 = $267K) | `business_case.scenarios.broad_all.avoided_penalty` | `cost_model.evaluate()`; `cost_model.phase_in()` | §9.4 |
-| $0.19 per $1 | 0.19 | `business_case.scenarios.broad_all.benefit_cost_ratio` | `cost_model.evaluate()` | §9.10 |
-| Broad program hospital net and whole-system net | −$905,775; −$479,391 a year | `business_case.scenarios.broad_all.hospital_net`; `business_case.scenarios.broad_all.combined_net` | `cost_model.evaluate()` | §9.8, §9.9 |
-| Pilot at Inspira Mullica Hill and Palisades | 310069, 310003 | `client.pilot_hospitals`; `client.pilot_hospital_names` | `analysis.pilot_hospitals()` (ranked by benefit-cost ratio) | §9 |
-| Pilot costs about $130K a year | $130,339 | `business_case.scenarios.targeted_pilot.program_cost` | `cost_model.evaluate()` | §9.2 |
-| About 7 fewer readmissions a year | 7.28 | `business_case.scenarios.targeted_pilot.readmissions_avoided` | `cost_model.evaluate()` | §9.3 |
-| About $110K a year less penalty once fully counted | $110,102 steady state (FY2031 = $96K) | `business_case.scenarios.targeted_pilot.avoided_penalty` | `cost_model.evaluate()`; `cost_model.phase_in()` | §9.4 |
-| Pilot returns $0.75 per $1 | 0.75 | `business_case.scenarios.targeted_pilot.benefit_cost_ratio` | `cost_model.evaluate()` | §9.10 |
-| Pilot hospital net and whole-system net | −$32,965; −$19,658 a year | `business_case.scenarios.targeted_pilot.hospital_net`; `business_case.scenarios.targeted_pilot.combined_net` | `cost_model.evaluate()` | §9.8, §9.9 |
-| Breaks even at a readmission reduction of at least 14% | 13.97% (whole-system: 11.78%) | `business_case.break_even.pilot_relative_reduction`; `business_case.break_even.pilot_relative_reduction_combined` | `cost_model.break_even()` | §9.12 |
-| ... or at a cost under about $236 per patient | $235.87 | `business_case.break_even.pilot_cost_per_enrollee` | `cost_model.break_even()` | §9.12 |
-| ... or if payers share about 30% of their savings | hospital net +$4,058; benefit-cost ratio 1.03 | `business_case.scenarios.targeted_pilot_risk30.hospital_net`; `.benefit_cost_ratio` | `cost_model.evaluate()` | §9.8 |
-| Broad program has no break-even readmission reduction | none up to 60%; cost per enrollee $7.77 | `business_case.break_even.broad_relative_reduction` (null); `business_case.break_even.broad_cost_per_enrollee` | `cost_model.break_even()` | §9.12 |
-| Recent trials: about 10% (roughly 1 in 10 readmissions among those reached) | 0.10 | `business_case.params_targeted.relative_reduction` | `config.yaml` `intervention.presets` | §9 |
-| Insurers save about $17,000 per readmission prevented | $16,948 = 0.892 × $19,000 | `business_case.params_targeted.payment_to_cost` × `business_case.params_targeted.cost_per_readmission` | `recommendations.payer_saving()` | §9.5 |
-| Penalty relief starts late 2028; fully counted from late 2030 | FY2029 (payments from Oct 1, 2028): 12.5% of the effect; FY2031 (from Oct 1, 2030): 87.5%; FY2032: 100% | not in `key_metrics.json`; `program_share_of_cms_window` in `bc_phase_in.parquet`[^phase] | `cost_model.hrrp_window()`, `cost_model.phase_in()` | §2.1, §9.4 |
-| 2,000-run Monte Carlo with a fixed seed | P(hospital net > 0) 11.9%; P(whole-system net > 0) 22.7%; seed 42 | `business_case.monte_carlo.p_hospital_net_positive`, `.p_combined_net_positive`, `.runs`, `.seed` | `cost_model.monte_carlo()` | §9.15 |
-| Only a +30% payment assumption flips the pilot's sign | payment per discharge +30% → hospital net +$66 | `business_case.sensitivity_pilot.hospital_flips`; `business_case.sensitivity_broad.any_hospital_sign_flip` (false) | `analysis.sensitivity_table()`[^flip] | §9.14 |
-| Nationally, hospital net is positive almost nowhere | broad 0 of 2,688 hospitals; targeted 33 of 1,828 (1.8%) | `business_case.national` | `analysis.build()` (national MA share 54%) | §9.8 |
-| Same penalized/not-penalized call as CMS for 97.1% of hospitals | 97.07% of 2,937 (TP 2,276, TN 575, FP 60, FN 26) | `validation.agreement`; `validation.hospitals_compared`; `validation.confusion` | `validate_cms.run()` → `cms_validation_summary.csv` | §5.7 |
-| r = 0.92 on the payment cut | Pearson 0.916; Spearman 0.942 | `validation.r_pearson`; `validation.r_spearman` | `validate_cms.run()` | §5.5 |
-| About 20% of an improvement reaches the score at 100 discharges vs about 80% at 1,500 (R² ≥ 0.99) | HF 0.213 and 0.803; R² 0.994–0.998 | `shrinkage.HF.pass_through_at_100`; `shrinkage.HF.pass_through_at_1500`; `shrinkage.*.r_squared` | `shrinkage.fit_k()` | §8.1 |
-| Penalty formula uses 0.9627 | 0.9627 | `business_case.params_targeted.neutrality_modifier` | `config.yaml` `penalty_model` | §5.3 |
+| Headline | Key | § |
+|---|---|---|
+| 3,055 hospitals, 18,330 rows; 30 checks pass, 7 warnings, 0 fail | `data.hrrp_hospitals`, `.hrrp_rows`, `.dq_checks` | 1 |
+| 2,336 hospitals penalized (CMS: 2,304); 84% of scored | `national.hospitals_penalized`, `.share_penalized_of_scored`; `known_numbers.fy2026_hospitals_penalized` | 5.6 |
+| $296M a year, below CMS's $316M–$361M; single hospitals ±30% | `national.total_penalty`, `.penalty_sensitivity`; `known_numbers.fy2026_total_penalty_reference_low`, `_high` | 5.5 |
+| Top 10% carry 55%; HF + PN 74% of excess readmissions; surgery 29% of dollars from 13% of discharges | `national.top10_share_of_penalty`, `.hf_pn_share_excess_readmissions`, `.surgical_share_penalty`, `.surgical_share_discharges` | 5.8 |
+| About $217K per extra hip/knee readmission vs $42K for HF | `national.conditions.HIP_KNEE.penalty_per_excess_readmission` (and `HF`) | 5.7 |
+| The group loses about $1.2M a year; two hospitals carry 62%; HF ($511K) and hip/knee ($327K) are the largest drivers | `client.total_penalty`, `.top2_share`, `.penalty_by_condition` | 5.5 |
+| 7 of 8 readmit more than their typical peer, 5 in the bottom 20%; HF at three hospitals worse than at 90%+ of peers | `client.peer_percentiles`[^peer] | 7.2 |
+| One hospital's hip/knee ratio (1.38) worse than at 99% of peers | `client.benchmark_target.HIP_KNEE` | 7.2 |
+| Hip/knee drove about $250K of the FY2026 estimate, forward exposure likely lower; FY2027 cut fell to 0.04% | `client.target_penalty_by_condition.HIP_KNEE` ($249,157); `validation.client` (310010) | 7.2 |
+| This year's penalties fell at five hospitals, rose at Palisades and Jersey City | `validation.client` (`cms_reduction_fy2026`, `_fy2027`: 5 fell, 2 rose, 1 unchanged) | 8.2 |
+| Biggest FY2026 cuts shrank about 30% in FY2027 (1.38% → 0.96%); small ones grew | `validation.persistence.top_decile_mean_cut_fy2026`, `_fy2027`, `.slope_fy2027_on_fy2026`; intercept[^pers] | 8.2 |
+| Group-wide: about $1.1M a year for about $0.29M ($0.3M) at full strength (FY2032), $0.19 per $1; no break-even; under $8 per patient | `sc.broad_all.program_cost`, `.avoided_penalty`, `.benefit_cost_ratio`; `bc.break_even.broad_relative_reduction` (null), `.broad_cost_per_enrollee` | 9.1–9.7 |
+| Pilot at Inspira Mullica Hill and Palisades: about $90K in the first 12 months, $130K a year at full size, 7 fewer readmissions, $110K less penalty at full strength | `client.pilot_hospital_names`; `bc.pilot_unit_economics.budget_first_12_months`, `.budget_full_strength_annual`; `sc.targeted_pilot.readmissions_avoided`, `.avoided_penalty` | 9.1, 9.2 |
+| $0.75 per $1; hospital net −$33K a year | `sc.targeted_pilot.benefit_cost_ratio`, `.hospital_net` | 9.4, 9.6 |
+| Relief starts late 2028; full effect late 2031; no payback by FY2032 | `bc_phase_in.parquet`[^phase]; `sc.targeted_pilot.cum_hospital_net_6y` (−$500,848) | 2, 9.4 |
+| Breaks even at ≥14% base effect (about 16% pooled; recent trials about 11%), ≤ $236 per patient, or about 27% of payer savings | `bc.break_even.pilot_relative_reduction`, `.pilot_cost_per_enrollee`, `.pilot_hospital_share_of_savings`; `bc.params_targeted.relative_reduction`; pooled factor[^pool] | 9.7 |
+| Month 12: ≥80% get all three steps at ≤$400. Month 24: keep if pooled readmissions fall about 16% (12% with co-funding or ≤$236) | `bc.params_targeted.cost_per_enrollee`; break-even keys above[^pool] | 9.7, 9.9 |
+| About 300 patients cannot prove it (needs about 1,250 per group) | `bc.pilot_power.enrolled_first_24_months`, `.n_per_group_for_break_even_effect` | 9.9 |
+| 2,000 scenarios: pays for itself 12% of the time (median −$54K) | `bc.monte_carlo.p_hospital_net_positive`, `.hospital_net_p50` | 9.8 |
+| One readmission costs about $18,000 to prevent and earns about $15,000 of relief; the $17,000 saved goes to the insurer | `bc.pilot_unit_economics` | 9.3, 9.6 |
+| Same call as CMS for 97.1%; r = 0.92 (rank 0.94); mean cut 0.46% vs 0.44% | `validation.agreement`, `.r_pearson`, `.r_spearman`, `.mean_reduction_ours`, `.mean_reduction_cms` | 5.4, 5.6 |
+| University Hospital (Newark): 0.34% vs CMS's 0.05%, about $11K | `validation.client` (310119) | 5.1 |
+| About 20% of an HF improvement reaches the score at 100 discharges, 80% at 1,500 (R² ≥ 0.99) | `shrinkage.HF.pass_through_at_100`, `_at_1500`; `shrinkage.*.r_squared` | 8.1 |
+| 0.9627 × payments × excess ratio, capped at 3% | `bc.params_targeted.neutrality_modifier`, `.penalty_cap_pct` | 5.2 |
 
 ## 11. Sources
 
-CMS rules, files and methodology
+- [CFR152] 42 CFR 412.152. https://www.ecfr.gov/api/versioner/v1/full/2026-10-01/title-42.xml?part=412&section=412.152
+- [CFR154] 42 CFR 412.154. https://www.govinfo.gov/content/pkg/CFR-2024-title42-vol2/xml/CFR-2024-title42-vol2-sec412-154.xml
+- [SSA] 42 U.S.C. 1395ww(q). https://www.govinfo.gov/content/pkg/USCODE-2023-title42/html/USCODE-2023-title42-chap7-subchapXVIII-partE-sec1395ww.htm
+- [HSR] FY2026 HRRP HSR user guide. https://qualitynet.cms.gov/files/6893aac2728800f196e92cb1?filename=FY-2026-HRRP-HSR-User-Guide.pdf
+- [SPEC] 2025 readmission measure specifications. https://qualitynet.cms.gov/files/6a0b7d2db58870567d25f40b?filename=2025_Rdmsn_MeasureMethodology.zip
+- [FACT27] FY2027 HRRP fact sheet. https://www.cms.gov/files/document/fy-2027-hrrp-fact-sheet-pdf.pdf
+- [SUPP] FY2026 HRRP supplemental file. https://www.cms.gov/files/zip/fy2026-hospital-readmissions-reduction-program-supplemental-data-file.zip
+- [T15-26] FY2026 Table 15. https://www.cms.gov/files/zip/fy-2026-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
+- [T15-27] FY2027 Table 15. https://www.cms.gov/files/zip/fy-2027-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
+- [IPPS26] FY2026 IPPS final rule. https://www.govinfo.gov/content/pkg/FR-2025-08-04/html/2025-14681.htm
+- [IPPS27] FY2027 IPPS final rule. https://www.govinfo.gov/content/pkg/FR-2026-08-04/html/2026-15833.htm
+- [PDC] FY2026 HRRP hospital file. https://data.cms.gov/provider-data/sites/default/files/resources/a171bc36c488d3e0dc33ec63abb469a6_1770163617/FY_2026_Hospital_Readmissions_Reduction_Program_Hospital.csv
+- [FN] Footnote crosswalk. https://data.cms.gov/provider-data/sites/default/files/resources/f29bb7c812e242f6edfef0a4b7d0eaca_1760630713/Footnote_Crosswalk.csv
+- [RESDAC] ResDAC cell-size policy. https://resdac.org/articles/cms-cell-size-suppression-policy
+- [MIF] MSPB measure information form. https://qualitynet.cms.gov/files/68f92567ec89ae1f61aa31e8?filename=HIQR_MSBP_Hospital_MIF_2025.pdf
+- [STAR4] Star rating method v4.0. https://qualitynet.cms.gov/files/6009aab621f78000252347fc?filename=Star_Rtngs_CompMthdlgy_v4.0.pdf
+- [STAR51] Star rating method v5.1. https://qualitynet.cms.gov/files/69eb9be1f1becb2be7183b08?filename=Star_Rtngs_CompMthdlgy_v5.1.pdf
+- [POS] Provider of Services layout. https://data.cms.gov/sites/default/files/2023-07/0ca58d5d-7914-4532-b22d-41741d3e6151/P.QWB.POSQ.OTHER.LAYOUT.MAR23.pdf
+- [SOM] State Operations Manual Ch. 2 §2779A1. https://www.cms.gov/Regulations-and-Guidance/Guidance/Manuals/downloads/som107c02.pdf
+- [THOMPSON] Thompson et al. 2016. https://pmc.ncbi.nlm.nih.gov/articles/PMC5134200/
+- [JOSHI] Joshi et al. 2019. https://pmc.ncbi.nlm.nih.gov/articles/PMC6596330/
+- [MEDPAC13] MedPAC June 2013 Ch. 4. https://www.medpac.gov/wp-content/uploads/import_data/scrape_files/docs/default-source/reports/jun13_ch04.pdf
+- [MEDPAC18] MedPAC June 2018 Ch. 1. https://www.medpac.gov/wp-content/uploads/import_data/scrape_files/docs/default-source/reports/jun18_medpacreporttocongress_rev_nov2019_note_sec.pdf
+- [MEDPAC25] MedPAC March 2025 Ch. 3. https://www.medpac.gov/wp-content/uploads/2025/03/Mar25_Ch3_MedPAC_Report_To_Congress_SEC.pdf
+- [MEDPAC26] MedPAC March 2026 Ch. 3. https://www.medpac.gov/wp-content/uploads/2026/03/Mar26_Ch3_MedPAC_Report_To_Congress_SEC.pdf
+- [ROBERTS] Roberts et al. 1999. https://pubmed.ncbi.nlm.nih.gov/10029127/
+- [HCUP196] HCUP SB #196. https://www.hcup-us.ahrq.gov/reports/statbriefs/sb196-Readmissions-Trends-High-Volume-Conditions.jsp
+- [HCUP307] HCUP SB #307. https://hcup-us.ahrq.gov/reports/statbriefs/sb307-readmissions-2020.jsp
+- [BEA] BEA NIPA Table 2.5.4. https://apps.bea.gov/national/Release/TXT/NipaDataA.txt
+- [RUPRI] RUPRI Center (2026), Medicare Advantage Enrollment Update 2025. https://rupri.public-health.uiowa.edu/publications/policybriefs/2026/MA_Enrollment_2025.pdf
+- [KFF-MA] KFF (2025), Medicare Advantage in 2025: Enrollment Update and Key Trends, kff.org.
 
-- [CFR152] 42 CFR 412.152, Definitions for the Hospital Readmissions Reduction Program (eCFR, current as of 2026-10-01). https://www.ecfr.gov/api/versioner/v1/full/2026-10-01/title-42.xml?part=412&section=412.152
-- [CFR154] 42 CFR 412.154, Payment adjustments under the Hospital Readmissions Reduction Program (Oct 1, 2024 edition). https://www.govinfo.gov/content/pkg/CFR-2024-title42-vol2/xml/CFR-2024-title42-vol2-sec412-154.xml
-- [SSA] 42 U.S.C. 1395ww(q) (Social Security Act §1886(q)), US Code 2023 edition. https://www.govinfo.gov/content/pkg/USCODE-2023-title42/html/USCODE-2023-title42-chap7-subchapXVIII-partE-sec1395ww.htm
-- [HSR] CMS, FY 2026 Hospital Readmissions Reduction Program Hospital-Specific Report User Guide (QualityNet, Aug 2025). https://qualitynet.cms.gov/files/6893aac2728800f196e92cb1?filename=FY-2026-HRRP-HSR-User-Guide.pdf
-- [SPEC] CMS, 2025 Condition-Specific Readmission Measures Updates and Specifications Report v2.0 (QualityNet). https://qualitynet.cms.gov/files/6a0b7d2db58870567d25f40b?filename=2025_Rdmsn_MeasureMethodology.zip
-- [QNM] QualityNet, Hospital Readmissions Reduction Program: Methodology. https://qualitynet.cms.gov/inpatient/hrrp/methodology
-- [INFO27] CMS, HRRP Payment Reduction Methodology Infographic (FY 2027). https://www.cms.gov/files/document/fy-2027-hrrp-infographic-pdf.pdf
-- [FACT27] CMS, Hospital Readmissions Reduction Program FY 2027 Fact Sheet. https://www.cms.gov/files/document/fy-2027-hrrp-fact-sheet-pdf.pdf
-- [SUPP] CMS, FY 2026 IPPS/LTCH PPS Final Rule HRRP Supplemental Data File. https://www.cms.gov/files/zip/fy2026-hospital-readmissions-reduction-program-supplemental-data-file.zip
-- [T15-26] CMS, Table 15: FY 2026 HRRP Payment Adjustment Factors. https://www.cms.gov/files/zip/fy-2026-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
-- [T15-27] CMS, Table 15: FY 2027 HRRP Payment Adjustment Factors. https://www.cms.gov/files/zip/fy-2027-hospital-readmissions-reduction-program-payment-adjustment-factors.zip
-- [IPPS26] FY 2026 IPPS/LTCH PPS Final Rule (CMS-1833-F), 90 FR 36536, Aug 4, 2025. https://www.govinfo.gov/content/pkg/FR-2025-08-04/html/2025-14681.htm
-- [IPPS27] FY 2027 IPPS/LTCH PPS Final Rule (CMS-1849-F), Aug 4, 2026. https://www.govinfo.gov/content/pkg/FR-2026-08-04/html/2026-15833.htm
-- [IPPS26-T1] CMS, FY 2026 IPPS Final Rule Tables 1A–1E (standardized amounts). https://www.cms.gov/files/zip/fy2026-ipps-fr-table-1a-1e.zip
-- [IPPS26-T5] CMS, FY 2026 IPPS Final Rule Table 5 (MS-DRG relative weights). https://www.cms.gov/files/zip/fy2026-ipps-fr-table-5.zip
-- [MUP24] CMS, Medicare Inpatient Hospitals – by Geography and Service, data year 2024. https://data.cms.gov/sites/default/files/2026-04/4517a6a1-adeb-4345-9f3d-a95391a470db/MUP_INP_RY26_P03_V10_DY24_Geo.CSV
-- [PDC] CMS Provider Data Catalog, FY 2026 Hospital Readmissions Reduction Program – Hospital. https://data.cms.gov/provider-data/sites/default/files/resources/a171bc36c488d3e0dc33ec63abb469a6_1770163617/FY_2026_Hospital_Readmissions_Reduction_Program_Hospital.csv
-- [FN] CMS Provider Data Catalog, Footnote Crosswalk. https://data.cms.gov/provider-data/sites/default/files/resources/f29bb7c812e242f6edfef0a4b7d0eaca_1760630713/Footnote_Crosswalk.csv
-- [RESDAC] ResDAC, CMS Cell Size Suppression Policy (version 01/26/2024). https://resdac.org/articles/cms-cell-size-suppression-policy
-- [QA] Inpatient VIQR Outreach and Education Support Contractor, Hospital VBP, HACRP and HRRP FY 2023 PDC Refresh Q&A Summary (Feb 2023). https://www.qualityreportingcenter.com/globalassets/iqr-2023-events/vbp021623/hvbp_hacrp_hrrp_februaryqa-summary_2023_cms-edits_final508.pdf
-- [MIF] CMS, Hospital IQR Program Re-Evaluated MSPB Hospital Measure Information Form (Oct 2025). https://qualitynet.cms.gov/files/68f92567ec89ae1f61aa31e8?filename=HIQR_MSBP_Hospital_MIF_2025.pdf
-- [MSPBFAQ] CMS, Hospital IQR Re-Evaluated MSPB Hospital Measure FAQs (Oct 2025). https://qualitynet.cms.gov/files/68f92e7dec89ae1f61aa3566?filename=FY2026_HIQR_MSPB_FAQS.pdf
-- [STAR4] CMS, Overall Hospital Quality Star Rating Comprehensive Methodology Report v4.0 (Jan 2021). https://qualitynet.cms.gov/files/6009aab621f78000252347fc?filename=Star_Rtngs_CompMthdlgy_v4.0.pdf
-- [STAR51] CMS, Overall Hospital Quality Star Rating Comprehensive Methodology Report v5.1 (Apr 2026). https://qualitynet.cms.gov/files/69eb9be1f1becb2be7183b08?filename=Star_Rtngs_CompMthdlgy_v5.1.pdf
-- [OPPS21] CY 2021 OPPS/ASC Final Rule (star rating methodology), 85 FR 85866, Dec 29, 2020. https://www.govinfo.gov/content/pkg/FR-2020-12-29/html/2020-26819.htm
-- [POS] CMS, Provider of Services (QIES) Record Layout, hospital category. https://data.cms.gov/sites/default/files/2023-07/0ca58d5d-7914-4532-b22d-41741d3e6151/P.QWB.POSQ.OTHER.LAYOUT.MAR23.pdf
-- [SOM] CMS, State Operations Manual, Chapter 2, §2779A1 (CCN structure). https://www.cms.gov/Regulations-and-Guidance/Guidance/Manuals/downloads/som107c02.pdf
-
-Measurement and policy research
-
-- [RED] AHRQ, Re-Engineered Discharge Toolkit: How CMS Measures the 30-Day All Cause Rehospitalization Rate. https://www.ahrq.gov/patient-safety/settings/hospital/red/toolkit/redtool-30day.html
-- [COPSS] COPSS-CMS White Paper Committee, Statistical Issues in Assessing Hospital Performance (rev. Jan 2012). https://www.cms.gov/medicare/quality-initiatives-patient-assessment-instruments/hospitalqualityinits/downloads/statistical-issues-in-assessing-hospital-performance.pdf
-- [THOMPSON] Thompson MP et al. Reliability of 30-Day Readmission Measures Used in the HRRP. Health Serv Res 2016;51(6):2095-2114. https://pmc.ncbi.nlm.nih.gov/articles/PMC5134200/
-- [JOSHI] Joshi S et al. Regression to the Mean in the Medicare HRRP. JAMA Intern Med 2019;179(9):1167-1173. https://pmc.ncbi.nlm.nih.gov/articles/PMC6596330/
-- [MEDPAC13] MedPAC, June 2013 Report to the Congress, Ch. 4: Refining the hospital readmissions reduction program. https://www.medpac.gov/wp-content/uploads/import_data/scrape_files/docs/default-source/reports/jun13_ch04.pdf
-- [MEDPAC18] MedPAC, June 2018 Report to the Congress, Ch. 1: The effects of the Hospital Readmissions Reduction Program. https://www.medpac.gov/wp-content/uploads/import_data/scrape_files/docs/default-source/reports/jun18_medpacreporttocongress_rev_nov2019_note_sec.pdf
-
-Cost and program inputs
-
-- [MEDPAC25] MedPAC, March 2025 Report to the Congress, Ch. 3: Hospital inpatient and outpatient services. https://www.medpac.gov/wp-content/uploads/2025/03/Mar25_Ch3_MedPAC_Report_To_Congress_SEC.pdf
-- [MEDPAC26] MedPAC, March 2026 Report to the Congress, Ch. 3: Hospital inpatient and outpatient services. https://www.medpac.gov/wp-content/uploads/2026/03/Mar26_Ch3_MedPAC_Report_To_Congress_SEC.pdf
-- [ROBERTS] Roberts RR et al. Distribution of variable vs fixed costs of hospital care. JAMA 1999;281(7):644-649. https://pubmed.ncbi.nlm.nih.gov/10029127/
-- [HCUP307] HCUP Statistical Brief #307, Clinical Conditions With Frequent, Costly Hospital Readmissions by Payer, 2020. https://hcup-us.ahrq.gov/reports/statbriefs/sb307-readmissions-2020.jsp
-- [LEPPIN] Leppin AL et al. Preventing 30-day hospital readmissions: a systematic review and meta-analysis of randomized trials. JAMA Intern Med 2014;174(7):1095-1107. https://pmc.ncbi.nlm.nih.gov/articles/PMC4249925/
-- [COCHRANE] Gonçalves-Bradley DC et al. Discharge planning from hospital. Cochrane Database Syst Rev 2022;2:CD000313. https://pmc.ncbi.nlm.nih.gov/articles/PMC8867723/
-- [BOGGAN] Boggan JC et al. Effectiveness of Synchronous Postdischarge Contacts. Ann Intern Med 2025;178(2):229-240. https://pubmed.ncbi.nlm.nih.gov/39805113/
-- [ZHONG] Zhong CCW et al. Effectiveness of Peri-Discharge Complex Interventions for Reducing 30-Day Readmissions among COPD Patients. Int J Integr Care 2022;22(1):7. https://pmc.ncbi.nlm.nih.gov/articles/PMC8815439/
-- [TOBIANO] Tobiano G et al. Surgical transitional care interventions and their outcomes: a scoping review. Int J Nurs Stud Adv 2025;8:100328. https://pmc.ncbi.nlm.nih.gov/articles/PMC12136900/
-- [NUCKOLS] Nuckols TK et al. Economic Evaluation of Quality Improvement Interventions Designed to Prevent Hospital Readmission. JAMA Intern Med 2017;177(7):975-985. https://pmc.ncbi.nlm.nih.gov/articles/PMC5710454/
-- [RUPRI] RUPRI Center for Rural Health Policy Analysis, Medicare Advantage Enrollment Update 2025. https://rupri.public-health.uiowa.edu/publications/policybriefs/2026/MA_Enrollment_2025.pdf
-- [KFF-MA] KFF, Medicare Advantage in 2025: Enrollment Update and Key Trends (July 2025), kff.org.
-- Donzé JD et al. HOSPITAL score international validation. JAMA Intern Med 2016;176(4):496-502.
-- Van Spall HGC et al. PACT-HF stepped-wedge cluster randomized trial. JAMA 2019;321(8):753-761.
-
-[^rows]: 11,486 = `n_results` of the National / ALL row in `data/processed/mart_segment_summary.parquet` (scored rows at payment-eligible hospitals).
-[^net]: Signed total = `excess_readmissions_annual_net` of the National / ALL row in `data/processed/mart_segment_summary.parquet` (+217.4 a year). The positive part is `national.excess_readmissions_per_year` in `key_metrics.json`.
-[^index]: Median and range of `readmission_index` over payment-eligible hospitals with at least one ERR in `data/processed/dim_hospital.parquet`.
-[^ppe]: Computed from `national.conditions.*` in `key_metrics.json`: 0.9627 × `payment_per_discharge` ÷ (`expected_rate_pct` ÷ 100), compared with `penalty_per_excess_readmission`. Differences run from −4.3% (PN) to +0.9% (hip/knee); the cap and the spread of expected rates across hospitals explain the gap.
-[^value]: `avoided_penalty` ÷ `readmissions_avoided` for `business_case.scenarios.targeted_pilot` ($110,102 ÷ 7.28) and `business_case.scenarios.broad_all` ($292,053 ÷ 42.39).
-[^mult]: `penalty_per_excess_readmission` ÷ `payment_per_discharge` for `national.conditions.HF` ($41,518 ÷ $8,523) and `national.conditions.HIP_KNEE` ($216,638 ÷ $12,062).
-[^top]: From `data/processed/mart_penalty_hospital.parquet`: estimated penalty of the 233 highest-penalty hospitals among the 2,336 penalized, divided by the national total.
-[^bands]: Counts and medians of `eligible_discharges_3yr` by `size_band` over payment-eligible hospitals with at least one ERR in `data/processed/dim_hospital.parquet`.
-[^phase]: From `data/processed/bc_phase_in.parquet`: `avoided_penalty` and `program_share_of_cms_window` for fiscal years 2029–2032, scenarios `broad_all` and `targeted_pilot`.
-[^flip]: `hospital_net` for `payment_scale` at +30% in `data/processed/bc_sensitivity.parquet` ($65.58 a year).
-[^peer]: Counted over `client.peer_percentiles` with the rules in `src/recommendations.py` `peer_summary()`: index percentile > 50 (7 hospitals); ≥ 80 (5); HF percentile ≥ 90 (3); COPD percentile ≥ 75 (4).
-[^cuts]: From `validation.client`: CMS's cut fell between FY2026 and FY2027 at 5 of 8 client hospitals, rose at 2 and was unchanged at 1. Palisades Medical Center went from 0.61% to 1.19%.
+[^net]: `mart_segment_summary`, National / ALL row: `excess_readmissions_annual_net` (+217.4).
+[^ppe]: 0.9627 × `payment_per_discharge` ÷ (`expected_rate_pct` ÷ 100) vs `penalty_per_excess_readmission` (`national.conditions`): −4.3% (PN) to +0.9% (hip/knee).
+[^value]: Pilot: `bc.pilot_unit_economics`. Broad: $292,053 ÷ 42.39.
+[^mult]: `penalty_per_excess_readmission` ÷ `payment_per_discharge`: $41,518 ÷ $8,523 = 4.87; $216,638 ÷ $12,062 = 17.96.
+[^hk]: `fct_hospital_condition`, 310010 HIP_KNEE: 164 × 5.39% expected = 8.8; (16 − 8.8) ÷ 3 = 2.4 a year. 1.1 = `readmissions_vs_peer_median`.
+[^pt]: n from `fct_hospital_condition.discharges_est` (671; 218; 296), k from `shrinkage_k.parquet`; business-case n = n ÷ 3 ÷ 0.59 × 2.
+[^pers]: `cms_persistence_hospital`: least-squares fit of `cut_fy2027` on `cut_fy2026`; means overall and where `cut_fy2026` > 0 (2,280); top tenth = at or above its 90th percentile (297).
+[^phase]: `bc_phase_in`: `program_share_of_cms_window`, `avoided_penalty`.
+[^flip]: `bc_sensitivity`, `payment_scale` +30%: $65.58.
+[^peer]: Rules of `recommendations.peer_summary()`: index > 50 (7), ≥ 80 (5); HF ≥ 90 (3).
+[^pool]: `bc.pilot_power.base_case_relative_reduction` 0.116 ÷ base 0.10 = 1.16; 1.16 × 13.97% = 16.2%.

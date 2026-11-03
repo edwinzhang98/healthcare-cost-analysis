@@ -49,14 +49,14 @@ def findings(m: dict) -> list[str]:
         (f"**How we compare.** {ps['above_median']} of {ps['n']} hospitals readmit more patients than their typical peer "
          f"(same ownership and Medicare volume), and {ps['worst_fifth']} are in the bottom 20% of similar hospitals. The "
          f"gaps are specific: heart failure at {', '.join(ps['hf_worst'])} (worse than 90% or more of peers); pneumonia "
-         f"and COPD at {ps['pn_worse']} hospitals each; hip/knee at {_short(cl['target_hospital_name'])}. Part of this is "
-         f"regional: New Jersey has the second-highest average readmission ratio of any state."),
+         f"and COPD at {ps['pn_worse']} hospitals each; hip/knee at {_short(cl['target_hospital_name'])}. New Jersey hospitals "
+         f"run high in general: the state has the second-highest average readmission ratio of 50 state groups."),
         (f"**What a follow-up program can recover.** Less than it costs. Group-wide it would cost about "
          f"{money(broad['program_cost'])} a year and avoid about {money(broad['avoided_penalty'])} in penalties at full "
          f"strength (FY2032), about {cents(broad['benefit_cost_ratio'])} per $1; it cannot break even at any plausible "
          f"effect size. Even at the two best-placed hospitals it returns about {cents(pilot['benefit_cost_ratio'])} per $1 "
          f"(hospital net {money(pilot['hospital_net'])} a year). The pilot breaks even only if it cuts readmissions by at "
-         f"least {pct(be['pilot_relative_reduction'])} (recent trials: about 10%), costs under "
+         f"least {pct(be['pilot_relative_reduction'])} (recent trials: about 11%), costs under "
          f"{money(be['pilot_cost_per_enrollee'])} per patient, or payers return about "
          f"{pct(be['pilot_hospital_share_of_savings'])} of their savings. Across {mc['runs']:,} simulated scenarios it pays "
          f"for itself for the hospital {pct(mc['p_hospital_net_positive'])} of the time. Penalties are also a moving target"
@@ -69,7 +69,7 @@ def build(m: dict) -> list[dict]:
     cl, bc, nat = m["client"], m["business_case"], m["national"]
     sc = bc["scenarios"]
     broad, pilot, shared = sc["broad_all"], sc["targeted_pilot"], sc["targeted_pilot_risk30"]
-    be, pw = bc["break_even"], bc["pilot_power"]
+    be, pw, ue = bc["break_even"], bc["pilot_power"], bc["pilot_unit_economics"]
     pilots = " and ".join(_short(n) for n in cl["pilot_hospital_names"])
     tgt = cl["benchmark_target"]
     hk = tgt.get("HIP_KNEE", {})
@@ -98,13 +98,14 @@ def build(m: dict) -> list[dict]:
                      f"no measurable effect from calls alone. Princeton's penalty is mostly hip/knee, which follow-up visits "
                      f"barely move (see the hip/knee item)."),
             "who": "Chief nursing officers and care-management leads at the two hospitals",
-            "impact": (f"About {money(pilot['program_cost'])} a year for about {pilot['readmissions_avoided']:.0f} fewer "
+            "impact": (f"About {money(ue['budget_first_12_months'])} in the first 12 months (half enrollment), then about "
+                       f"{money(pilot['program_cost'])} a year at full size, for about {pilot['readmissions_avoided']:.0f} fewer "
                        f"readmissions and about {money(pilot['avoided_penalty'])} a year less penalty at full strength "
                        f"(FY2032). On base assumptions it still loses about {money(-pilot['hospital_net'])} a year for the "
                        f"hospital, and nothing comes back before late 2028."),
-            "measure": (f"Month 12 (stop or continue): at least 80% of enrolled patients get all three steps, cost stays at "
-                        f"or under $400 per patient, and ED visits, observation stays and deaths do not rise against a "
-                        f"comparison group. Month 24 (keep or stop): readmissions among enrolled patients, pooled across both "
+            "measure": (f"Month 12 (stop or continue): at least 90 patients enrolled, at least 80% of them get all three "
+                        f"steps, cost stays at or under $400 per patient, and ED visits, observation stays, deaths and "
+                        f"readmissions do not rise against a comparison group. Month 24 (keep or stop): readmissions among enrolled patients, pooled across both "
                         f"hospitals, fall about 16% (the pooled equivalent of the {pct(be['pilot_relative_reduction'])} break-even) at $400 per "
                         f"patient, or about 12% with at least "
                         f"{pct(be['pilot_hospital_share_of_savings'])} payer co-funding or a cost at or under "
@@ -131,9 +132,9 @@ def build(m: dict) -> list[dict]:
                      f"{hk.get('percentile', float('nan')):.0f}% of peers."),
             "who": "Orthopedics chair with the quality team",
             "impact": (f"Hip/knee drove about {money(hk_pen)} a year of that hospital's estimated FY2026 penalty, from "
-                       "roughly two extra readmissions a year. CMS charges about "
-                       f"{money(nat['conditions']['HIP_KNEE']['penalty_per_excess_readmission'])} per hip/knee readmission "
-                       "above the threshold, so a case review is cheap compared with the stakes."),
+                       "only about one excess readmission a year as CMS's score counts it. CMS charges about "
+                       f"{money(nat['conditions']['HIP_KNEE']['penalty_per_excess_readmission'])} per excess hip/knee "
+                       "readmission, so a case review is cheap compared with the stakes."),
             "measure": "Review every hip/knee readmission from the last two years; re-check against FY2027 data in early 2027.",
             "risk": hk_risk + ".",
         },

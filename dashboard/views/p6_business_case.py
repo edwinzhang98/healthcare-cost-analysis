@@ -68,7 +68,7 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
     with d2:
         md("**What the program achieves and costs**")
         st.slider("Readmission reduction among enrolled patients", 0, 30, key="bc_relative_reduction", step=1, format="%d%%",
-                  help="Base for pneumonia / heart attack (recent trials: about 10%). Applied ×1.2 for heart failure, "
+                  help="Base for pneumonia / heart attack (recent trials: about 11%). Applied ×1.2 for heart failure, "
                        "×0.5 for COPD, ×0.3 for surgery, following the strength of the trial evidence.")
         st.slider("Cost per enrolled patient", 100, 1000, key="bc_cost_per_enrollee", step=25, format="$%d")
         st.slider("Fixed cost per hospital per year", 0, 150_000, key="bc_fixed_cost_per_hospital", step=5_000, format="$%d")
@@ -76,7 +76,7 @@ with st.expander("Program design and assumptions (sources: docs/assumptions.md)"
                  format_func={"volume": "Depends on hospital volume (measured)", "full": "All of it (naive)"}.get)
         st.slider("How much of today's excess would persist anyway", 30, 100, key="bc_persistence", step=5, format="%d%%",
                   help="Penalties drift back toward the average: each hospital's actual FY2027 cut was about 0.58 x its FY2026 cut plus a small constant "
-                       "cuts. 100% = assume today's penalty simply continues.")
+                       "(0.16 points), so big cuts shrank and small ones grew. 100% = assume today's penalty simply continues.")
     with d3:
         md("**Money and rules**")
         st.slider("Medicare Advantage share of patients", 0, 80, key="bc_ma_share", step=5, format="%d%%",

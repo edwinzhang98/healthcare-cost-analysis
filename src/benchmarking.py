@@ -65,7 +65,7 @@ def benchmark(hc: pd.DataFrame, dim: pd.DataFrame, facility_id: str,
     out = pd.DataFrame(rows)
     out["status"] = np.select(
         [~out["has_err"], out["percentile_vs_peers"] >= 75, out["percentile_vs_peers"] <= 25],
-        ["Too few cases to score", "Worse than most peers", "Better than most peers"],
+        ["No CMS score", "Worse than most peers", "Better than most peers"],
         default="In line with peers")
     return out
 

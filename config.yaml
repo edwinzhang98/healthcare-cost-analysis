@@ -98,7 +98,7 @@ intervention:
       persistence: 0.5
       ma_share: 0.41
       pass_through_mode: volume
-  pilot_hospitals_top_n: 2      # pilot where the targeted program's hospital net is highest (addressable penalty)
+  pilot_hospitals_top_n: 2      # pilot at the hospitals where the targeted program's benefit-cost ratio is highest (addressable penalty)
   # low / base / high for the Monte Carlo (triangular) and the scenario table
   ranges:
     relative_reduction: [0.03, 0.10, 0.20]

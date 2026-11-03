@@ -59,7 +59,7 @@ md(
   scores are from the FY2026 program (Jul 2021–Jun 2024). The business case applies the new rules, but the starting
   scores are a year older than the penalties now in effect.
 - **Program effects come from trials.** Real-world programs usually do worse than trials; the base case already uses
-  the more conservative recent-trial estimate (about a 10% reduction).
+  a 10% reduction, a little below recent trials (about 11%) and well below older ones.
 """
 )
 

@@ -97,6 +97,8 @@ def sensitivity_table(m: cm.ModelInputs, p: cm.ProgramParams, pct: float = 0.30)
             v = val * factor
             if name in ("reach", "ma_share", "hospital_share_of_savings"):
                 v = min(v, 0.95)
+            if name in ("persistence", "variable_cost_share"):      # shares cannot exceed 100% (same caps as the tornado)
+                v = min(v, 1.0)
             t = cm.evaluate(m, replace(p, **{name: v}))["totals"]
             rows.append({
                 "parameter": name, "label": label, "change": direction, "value": v, "base_value": val,
@@ -123,7 +125,11 @@ def pilot_unit_economics(m: cm.ModelInputs, p: cm.ProgramParams) -> dict:
     """Per avoided readmission: what the program costs vs what comes back (steady state)."""
     t = cm.evaluate(m, p)["totals"]
     n = t["readmissions_avoided"]
-    return {"program_cost_per_readmission_avoided": _r(t["program_cost"] / n, 0),
+    fixed = p.fixed_cost_per_hospital * t["n_hospitals_running"]
+    ramp = load_config()["intervention"]["ramp_first_year"]     # first 12 months run at this share of enrollment
+    return {"budget_first_12_months": _r(fixed + ramp * (t["program_cost"] - fixed), 0),
+            "budget_full_strength_annual": _r(t["program_cost"], 0),
+            "program_cost_per_readmission_avoided": _r(t["program_cost"] / n, 0),
             "penalty_relief_per_readmission_avoided": _r(t["avoided_penalty"] / n, 0),
             "payer_saving_per_readmission_avoided": _r(p.payment_per_readmission, 0),
             "lost_margin_per_readmission_avoided": _r(p.lost_margin_per_readmission, 0)}
@@ -341,7 +347,7 @@ def build() -> dict:
          "detail": "CMS did not publish an FY2026 dollar total; our payment assumptions are conservative (see assumptions B3)"},
         {"check_id": "P4", "category": "Reproducibility", "check_name": "Client group draw reproduces config.yaml (seed 42)",
          "expected": "True", "actual": str(client.check_client_group(dim)), "status": "PASS" if client.check_client_group(dim) else "FAIL",
-         "detail": "8 hospitals, stratified by size"},
+         "detail": "8 hospitals, stratified by HRRP volume band"},
         {"check_id": "P5", "category": "Reproducibility", "check_name": "Monte Carlo with fixed seed gives identical results on re-run",
          "expected": "True", "actual": str(reproducible), "status": "PASS" if reproducible else "FAIL", "detail": f"seed {seed}"},
         {"check_id": "P6", "category": "Known numbers", "check_name": "Fitted shrinkage matches published measure reliability (HF pass-through at 1,019 cases ≈ 0.70)",

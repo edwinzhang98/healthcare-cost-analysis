@@ -17,7 +17,8 @@ Baseline: what would happen without the program
 -----------------------------------------------
 Penalties regress toward the mean: hospitals with the highest ERR today tend to
 look better in later windows even if nothing changes (published HRRP research;
-CMS's FY2026 -> FY2027 payment cuts keep only about 0.58 of their size). So the
+CMS's actual FY2027 cut is about 0.58 x the FY2026 cut + 0.16 points: big cuts shrink,
+small ones grow). So the
 FY2029-FY2032 baseline is a forecast, not today's penalty:
        forecast ERR = 1 + persistence x (ERR - 1)       (same for the observed rate)
 persistence = 1 reproduces "today's penalty continues".

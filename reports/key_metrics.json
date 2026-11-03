@@ -850,7 +850,7 @@
         "peer_median": 0.9913,
         "percentile": null,
         "n_peers": 520,
-        "status": "Too few cases to score",
+        "status": "No CMS score",
         "readmissions_vs_peer_median": null
       },
       "COPD": {
@@ -1069,6 +1069,8 @@
       "pilot_hospital_share_of_savings": 0.2671
     },
     "pilot_unit_economics": {
+      "budget_first_12_months": 90169.0,
+      "budget_full_strength_annual": 130339.0,
       "program_cost_per_readmission_avoided": 17900.0,
       "penalty_relief_per_readmission_avoided": 15120.0,
       "payer_saving_per_readmission_avoided": 16948.0,
